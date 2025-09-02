@@ -1,5 +1,3 @@
-import { LuUsers } from "react-icons/lu";
-import { IoMdTrendingUp } from "react-icons/io";
 import { ReactNode } from "react";
 
 type props = {

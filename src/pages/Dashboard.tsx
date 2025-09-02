@@ -265,7 +265,7 @@ export default function Dashboard() {
                 >
                   {dataPieChart.map((entry, index) => (
                     <Cell
-                      key={`cell-${index}`}
+                      key={`cell-${index}-${entry}`}
                       fill={COLORS[index % COLORS.length]}
                     />
                   ))}
