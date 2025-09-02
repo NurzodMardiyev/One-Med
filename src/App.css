@@ -1,0 +1,23 @@
+body {
+  font-family: "IvyEpic", sans-serif;
+  font-size: 16px;
+  src: url("./index.css") format("woff2");
+  font-display: swap;
+}
+
+.logo .ant-menu-item {
+  padding-left: 22px !important;
+}
+.logo .ant-menu-item:hover {
+  background-color: inherit !important;
+}
+.sidebarBtn .ant-menu-item {
+  background-color: #2b7fff !important;
+  color: #fff;
+}
+.lineGraph svg:focus-visible {
+  outline: none !important;
+}
+svg:focus {
+  outline: none !important;
+}
