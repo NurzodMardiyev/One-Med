@@ -1,7 +1,6 @@
 import { Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { useCreateContext } from "../context/ContextApi";
-import Container from "../components/Container";
 import NavBar from "../components/NavBar";
 
 export default function Layout() {
