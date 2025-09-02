@@ -2,6 +2,7 @@ import { Button, Form, Input } from "antd";
 import Container from "../components/Container";
 import { FaMedrt } from "react-icons/fa";
 import MaskedInput from "react-text-mask";
+import { Link } from "react-router-dom";
 
 export default function Login() {
   const authTakeValue = (value: { number: string; password: string }) => {
@@ -62,12 +63,12 @@ export default function Login() {
               />
             </Form.Item>
             <Form.Item>
-              <Button
-                type="primary"
-                className="w-full !rounded-[4px]  !h-[39px]"
+              <Link
+                className="w-full !rounded-[4px]  !h-[39px] !bg-[#2B7FFF] !text-[#fff] flex justify-center items-center"
+                to="/dashboard"
               >
                 Kirish
-              </Button>
+              </Link>
             </Form.Item>
           </Form>
         </div>
