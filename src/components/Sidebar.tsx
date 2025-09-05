@@ -7,7 +7,7 @@ import { FiLogOut } from "react-icons/fi";
 import type { MenuProps } from "antd";
 import { Menu } from "antd";
 import { useCreateContext } from "../context/ContextApi";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { FaMedrt } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
 import "../App.css";
@@ -17,6 +17,7 @@ type MenuItem = Required<MenuProps>["items"][number];
 export default function Sidebar() {
   const { collapsed, setCollapsed } = useCreateContext();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const toggleCollapsed = () => {
     setCollapsed(!collapsed);
@@ -31,7 +32,7 @@ export default function Sidebar() {
   ];
 
   const handleEvent = (e: { key: string }) => {
-    navigate(e.key);
+    navigate(e.key, { replace: true });
   };
 
   const handleEventLogOut = (e: { key: string }) => {
@@ -58,7 +59,7 @@ export default function Sidebar() {
       </div>
       <Menu
         onClick={handleEvent}
-        defaultSelectedKeys={["dashboard"]}
+        defaultSelectedKeys={[location.pathname.slice(1)]}
         mode="inline"
         inlineCollapsed={collapsed}
         items={items}

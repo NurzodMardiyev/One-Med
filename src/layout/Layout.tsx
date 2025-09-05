@@ -2,10 +2,22 @@ import { Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { useCreateContext } from "../context/ContextApi";
 import NavBar from "../components/NavBar";
+import { useEffect } from "react";
 
 export default function Layout() {
   const { collapsed } = useCreateContext();
   console.log(collapsed);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      window.history.go(1);
+    };
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
   return (
     <div className="">
       <div className="lg:max-w-[2560px] md:max-w-[1600px]  mx-auto flex bg-[#F9FAFB]">

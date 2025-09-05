@@ -1,35 +1,56 @@
 import { Form, Input } from "antd";
 import Container from "../components/Container";
 import { FaMedrt } from "react-icons/fa";
-import MaskedInput from "react-text-mask";
-import { Link } from "react-router-dom";
+import { useMutation, useQueryClient } from "react-query";
+import { OneMedAdmin } from "../queries/query";
 
 export default function Login() {
-  const authTakeValue = (value: { number: string; password: string }) => {
-    console.log(value);
+  type AuthPayload = {
+    phone: string;
+    password: string;
   };
 
-  const phoneMask = [
-    "+",
-    "9",
-    "9",
-    "8",
-    " ",
-    "(",
-    /[1-9]/,
-    /\d/,
-    ")",
-    " ",
-    /\d/,
-    /\d/,
-    /\d/,
-    "-",
-    /\d/,
-    /\d/,
-    "-",
-    /\d/,
-    /\d/,
-  ];
+  const queryClient = useQueryClient();
+
+  const { mutate: loginMutate } = useMutation<number, Error, AuthPayload>(
+    (obj) => OneMedAdmin.authLogin(obj),
+    {
+      onSuccess: (status) => {
+        console.log("Access olindi Loginniki. Status:", status);
+        queryClient.invalidateQueries();
+      },
+      onError: () => {
+        console.log("Mutation Xato");
+      },
+    }
+  );
+
+  const authTakeValue = (value: AuthPayload) => {
+    console.log(value);
+    loginMutate(value);
+  };
+
+  // const phoneMask = [
+  //   "+",
+  //   "9",
+  //   "9",
+  //   "8",
+  //   " ",
+  //   "(",
+  //   /[1-9]/,
+  //   /\d/,
+  //   ")",
+  //   " ",
+  //   /\d/,
+  //   /\d/,
+  //   /\d/,
+  //   "-",
+  //   /\d/,
+  //   /\d/,
+  //   "-",
+  //   /\d/,
+  //   /\d/,
+  // ];
 
   return (
     <div className="bg-[#ececec]">
@@ -49,11 +70,11 @@ export default function Login() {
             layout="vertical"
             className="inline-block  w-full "
           >
-            <Form.Item name="number" label="Tel Number">
-              <MaskedInput
-                mask={phoneMask}
-                placeholder="+998 (__) ___-__-__"
-                className="w-full px-2 outline-none border-[0.5px] border-[#D9D9D9] py-2 rounded-[4px] hover:border-[#1677ff] focus:border-[#1677ff] focus:shadow-[0_0_0_2px_rgba(5,145,255,0.1)] transition"
+            <Form.Item name="username" label="Username">
+              <Input
+                // mask={phoneMask}
+                placeholder="Faydalanuvchi Ismi"
+                className="w-full px-2 outline-none border-[0.5px] border-[#D9D9D9] !py-2 !rounded-[4px] hover:border-[#1677ff] focus:border-[#1677ff] focus:shadow-[0_0_0_2px_rgba(5,145,255,0.1)] transition"
               />
             </Form.Item>
             <Form.Item name="password" label="Pasword">
@@ -62,14 +83,12 @@ export default function Login() {
                 className="!py-2 !rounded-[4px]"
               />
             </Form.Item>
-            <Form.Item>
-              <Link
-                className="w-full !rounded-[4px]  !h-[39px] !bg-[#2B7FFF] !text-[#fff] flex justify-center items-center"
-                to="/dashboard"
-              >
-                Kirish
-              </Link>
-            </Form.Item>
+            <button
+              className="w-full !rounded-[4px]  !h-[39px] !bg-[#2B7FFF] !text-[#fff] flex justify-center items-center cursor-pointer"
+              // to="/dashboard"
+            >
+              Kirish
+            </button>
           </Form>
         </div>
       </Container>
