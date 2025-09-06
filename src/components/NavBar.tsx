@@ -1,14 +1,23 @@
 import { Select } from "antd";
 import { MdOutlineTranslate } from "react-icons/md";
 import { FaRegUser } from "react-icons/fa";
+import { useLocation } from "react-router-dom";
 
 export default function NavBar() {
+  const location = useLocation();
   const handleChange = (value: string) => {
     console.log(`selected ${value}`);
   };
+
   return (
     <div className="  flex items-center justify-between w-full py-2 border-b border-[#e8e8e8] bg-white/20 backdrop:blur-md">
-      <h2 className="text-[18px] font-semibold">Bosh Sahifa</h2>
+      <h2 className="text-[18px] font-semibold">
+        {location.pathname === "/doctor"
+          ? "Bemorlar ro'yhati"
+          : location.pathname === "/register"
+          ? "Ro'yhatga olish"
+          : "Bosh Sahifa"}
+      </h2>
 
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">

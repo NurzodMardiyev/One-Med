@@ -3,21 +3,35 @@ import Container from "../components/Container";
 import { FaMedrt } from "react-icons/fa";
 import { useMutation, useQueryClient } from "react-query";
 import { OneMedAdmin } from "../queries/query";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
+  const navigate = useNavigate();
   type AuthPayload = {
     phone: string;
     password: string;
   };
+  type AuthResponse = {
+    data: { role: string };
+  };
 
   const queryClient = useQueryClient();
 
-  const { mutate: loginMutate } = useMutation<number, Error, AuthPayload>(
+  const { mutate: loginMutate } = useMutation<AuthResponse, Error, AuthPayload>(
     (obj) => OneMedAdmin.authLogin(obj),
     {
-      onSuccess: (status) => {
-        console.log("Access olindi Loginniki. Status:", status);
+      onSuccess: (data) => {
         queryClient.invalidateQueries();
+        console.log("Access olindi Loginniki. Data:", data);
+        if (data?.data.role === "admin") {
+          navigate("/dashboard");
+        } else if (data?.data.role === "doctor") {
+          navigate("/doctor");
+        } else if (data?.data.role === "registrator") {
+          navigate("/register");
+        } else {
+          navigate("/");
+        }
       },
       onError: () => {
         console.log("Mutation Xato");

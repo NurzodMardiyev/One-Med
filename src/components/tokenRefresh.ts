@@ -11,12 +11,12 @@ const TokenRefresher = () => {
       }
 
       try {
-        const response = await api.post("api/users/token/refresh", {
+        const response = await api.post("/v1/auth/token/refresh", {
           refresh: refreshToken,
         });
         console.log(response.data);
-        const newAccessToken = response.data.data.access;
-        const newRefreshToken = response.data.data.refresh;
+        const newAccessToken = response.data.data.access_token;
+        const newRefreshToken = response.data.data.refresh_token;
         SecureStorage.setItem("accessToken", newAccessToken);
         SecureStorage.setItem("refreshToken", newRefreshToken);
         console.log("Yangi access token:", newAccessToken);
@@ -24,7 +24,7 @@ const TokenRefresher = () => {
       } catch (error) {
         console.error("Failed to refresh token:", error);
       }
-    }, 15 * 60 * 1000); // 15 minut
+    }, 1 * 60 * 1000); // 15 minut
 
     return () => clearInterval(interval);
   }, []);

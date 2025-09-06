@@ -6,7 +6,24 @@ import { LuUser } from "react-icons/lu";
 import { BsTelephone } from "react-icons/bs";
 import { FaUserDoctor } from "react-icons/fa6";
 import { useState } from "react";
+import { useMutation, useQueryClient } from "react-query";
+import { OneMedAdmin } from "../queries/query";
 
+type EmployeeResponseType = {
+  id: string;
+  fio: string;
+  username: string;
+  role: string;
+  phone: string;
+  status: string;
+};
+type EmployeeObjType = {
+  fio: string;
+  username: string;
+  password: string;
+  role: string;
+  phone: string;
+};
 export default function Employees() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -21,8 +38,21 @@ export default function Employees() {
     console.log(value);
   };
 
-  const addEmployeeFunc = (value: {}) => {
+  const queryClient = useQueryClient();
+  const { mutate: addEmployeMutate } = useMutation<
+    EmployeeResponseType,
+    Error,
+    EmployeeObjType
+  >((obj) => OneMedAdmin.addEmployee(obj), {
+    onSuccess: (data) => {
+      queryClient.invalidateQueries();
+      console.log(data);
+    },
+  });
+
+  const addEmployeeFunc = (value: EmployeeObjType) => {
     console.log(value);
+    addEmployeMutate(value);
   };
 
   const handleRoleChange = (value: string) => {
@@ -51,12 +81,14 @@ export default function Employees() {
       <div className="px-6 py-6 border border-[#E0E6EB] rounded-[10px] flex items-center gap-3 mt-4">
         <Form onFinish={handleTakeSearchValue} className="flex-1">
           <Form.Item name="search" className="!m-0 relative">
-            <IoSearch className="inline-block absolute left-[10px] top-[35%] text-[#717171]" />
-            <input
-              type="text"
-              className="w-full border border-[#eaeaea] m-0 pr-3 py-2 ps-[35px] rounded-[6px] focus:outline-[#2D80FF] bg-[#F9FAFB] text-[14px] md:h-[41px]"
-              placeholder="Ism, bo'lim yoki ID bo'yicha qidirish..."
-            />
+            <div>
+              <IoSearch className="inline-block absolute left-[10px] top-[35%] text-[#717171]" />
+              <input
+                type="text"
+                className="w-full border border-[#eaeaea] m-0 pr-3 py-2 ps-[35px] rounded-[6px] focus:outline-[#2D80FF] bg-[#F9FAFB] text-[14px] md:h-[41px]"
+                placeholder="Ism, bo'lim yoki ID bo'yicha qidirish..."
+              />
+            </div>
           </Form.Item>
         </Form>
         <div className="flex items-center gap-2">
@@ -117,11 +149,10 @@ export default function Employees() {
           </Form.Item>
           <Form.Item name="role" label="Role">
             <Select
-              defaultValue="doctor"
               onChange={handleRoleChange}
               options={[
                 { value: "doctor", label: "Shifokor" },
-                { value: "register", label: "Registrator" },
+                { value: "registrator", label: "Registrator" },
               ]}
             />
           </Form.Item>
