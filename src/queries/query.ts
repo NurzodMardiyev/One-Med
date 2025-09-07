@@ -2,7 +2,7 @@ import axios from "axios";
 import SecureStorage from "react-secure-storage";
 import api from "../components/api";
 
-const baseApi = "https://7796cabd7d3c.ngrok-free.app";
+const baseApi = "https://onemed-backend.onrender.com";
 
 
 export const OneMedAdmin = {
