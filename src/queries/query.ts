@@ -17,79 +17,103 @@ type ServiceItem = {
   }
 
 
-  type pasport = {
-    series: string;
-    number: string;
-    jshr: string;
-    issued_by: string;
-    issued_date: Dayjs;
-    expiry_date: Dayjs;
-  };
-  type driver = {
-    number: string;
-    jshr: string;
-  };
-  type sendResponseValuesType = {
-    first_name: string;
-    middle_name: string;
-    last_name: string;
-    phone: string;
-    document_type: string;
-    pasport?: pasport;
-    idcard?: pasport;
-    driver_license?: driver;
-    gender: string;
-    date_of_birth: Dayjs;
-    blood_group: string;
-    country: string;
-    height: number;
-    weight: number;
-  };
 
-  type PatientResponse = {
+
+
+type pasport = {
+  series: string;
+  number: string;
+  jshr: string;
+  issued_by: string;
+  issued_date: Dayjs;
+  expiry_date: Dayjs;
+};
+type driver = {
+  number: string;
+  jshr: string;
+};
+type sendResponseValuesType = {
+  first_name: string;
+  middle_name: string;
+  last_name: string;
+  phone: string;
+  document_type: string;
+  pasport?: pasport;
+  idcard?: pasport;
+  driver_license?: driver;
+  gender: string;
+  date_of_birth: Dayjs;
+  blood_group: string;
+  country: string;
+  height: number;
+  weight: number;
+};
+
+
+type Document = {
+  series: string;
+  number: string;
+  jshr: string;
+  issued_by: string;
+  issued_date: string;
+  expiry_date: string;
+};
+
+type DriverLicense = {
+  number: string;
+  jshr: string;
+};
+
+type Patient = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  middle_name: string;
+  phone: string;
+  home_phone: string | null;
+  gender: "male" | "female";
+  blood_group: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
+  date_of_birth: string; // backend string qaytaradi
+  country: string;
+  region: string;
+  address: string;
+  height: number;
+  weight: number;
+  status: string;
+  document_type: "pasport" | "idcard" | "driver_license";
+  pasport: Document | null;
+  idcard: Document | null;
+  driver_license: DriverLicense | null;
+  created_at: string;
+  updated_at: string;
+};
+type PatientSelectResponse = {
+  success: boolean;
+  data: Patient; // bunda date_of_birth, pasport.issued_date ham string edi
+};
+
+type PatientResponse = {
   success: boolean;
   message: string;
-  data: {
-    id: string;
-    first_name: string;
-    middle_name: string;
-    last_name: string;
-    phone: string;
-    document_type: string;
-    gender: string;
-    date_of_birth: string; // backend string qaytaradi
-    blood_group: string;
-    country: string;
-    region: string;
-    address: string;
-    height: number;
-    weight: number;
-    status: string;
-    pasport: {
-      series: string;
-      number: string;
-      jshr: string;
-      issued_by: string;
-      issued_date: string;
-      expiry_date: string;
-    } | null;
-    idcard: any; // agar keladigan structure aniq bo‘lsa yozib beramiz
-    driver_license: any;
-    home_phone: string | null;
-    created_at: string;
-    updated_at: string;
-  };
+  data: Patient;
 };
 type PatientRequest = Omit<
   sendResponseValuesType,
-  "date_of_birth" | "pasport"
+  "date_of_birth" | "pasport" | "idcard"
 > & {
   date_of_birth: string;
-  pasport?: Omit<pasport, "issued_date" | "expiry_date"> & {
+  pasport?: Omit<Document, "issued_date" | "expiry_date"> & {
     issued_date: string;
     expiry_date: string;
   };
+  idcard?: Omit<Document, "issued_date" | "expiry_date"> & {
+    issued_date: string;
+    expiry_date: string;
+  };
+  driver_license?: DriverLicense;
 };
+
+
 export const OneMedAdmin = {
   authLogin: async (obj:{phone: string, password: string}) => {
     const response = await axios.post(`${baseApi}/v1/auth/login`, obj, {
@@ -169,6 +193,24 @@ searchPatient: async (search: string): Promise<any> => {
     params: {
       search
     },
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+},
+
+selectPatient: async (select: string): Promise<PatientSelectResponse> => {
+  const response = await api.get(`${baseApi}/v1/patients/${select}`, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+},
+
+updatePatient: async (id: string, obj: PatientRequest): Promise<PatientResponse> => {
+  const response = await api.patch(`${baseApi}/v1/patients/${id}`, obj, {
     headers: {
       "Content-Type": "application/json",
     },

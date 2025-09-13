@@ -26,3 +26,7 @@ svg:focus {
   font-size: 14px !important;
   font-weight: 500 !important;
 }
+.register .ant-select-single .ant-select-selector {
+  border-top-right-radius: 0px !important;
+  border-bottom-right-radius: 0px !important;
+}
