@@ -1,9 +1,10 @@
-import { Form, Input } from "antd";
+import { Form, Input, Spin } from "antd";
 import Container from "../components/Container";
 import { FaMedrt } from "react-icons/fa";
 import { useMutation, useQueryClient } from "react-query";
 import { OneMedAdmin } from "../queries/query";
 import { useNavigate } from "react-router-dom";
+import { LoadingOutlined } from "@ant-design/icons";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -17,27 +18,28 @@ export default function Login() {
 
   const queryClient = useQueryClient();
 
-  const { mutate: loginMutate } = useMutation<AuthResponse, Error, AuthPayload>(
-    (obj) => OneMedAdmin.authLogin(obj),
-    {
-      onSuccess: (data) => {
-        queryClient.invalidateQueries();
-        console.log("Access olindi Loginniki. Data:", data);
-        if (data?.data.role === "admin") {
-          navigate("/dashboard");
-        } else if (data?.data.role === "doctor") {
-          navigate("/doctor");
-        } else if (data?.data.role === "registrator") {
-          navigate("/register");
-        } else {
-          navigate("/");
-        }
-      },
-      onError: () => {
-        console.log("Mutation Xato");
-      },
-    }
-  );
+  const { mutate: loginMutate, isLoading: loginLoading } = useMutation<
+    AuthResponse,
+    Error,
+    AuthPayload
+  >((obj) => OneMedAdmin.authLogin(obj), {
+    onSuccess: (data) => {
+      queryClient.invalidateQueries();
+      console.log("Access olindi Loginniki. Data:", data);
+      if (data?.data.role === "admin") {
+        navigate("/dashboard");
+      } else if (data?.data.role === "doctor") {
+        navigate("/doctor");
+      } else if (data?.data.role === "registrator") {
+        navigate("/register");
+      } else {
+        navigate("/");
+      }
+    },
+    onError: () => {
+      console.log("Mutation Xato");
+    },
+  });
 
   const authTakeValue = (value: AuthPayload) => {
     console.log(value);
@@ -101,7 +103,16 @@ export default function Login() {
               className="w-full !rounded-[4px]  !h-[39px] !bg-[#2B7FFF] !text-[#fff] flex justify-center items-center cursor-pointer"
               // to="/dashboard"
             >
-              Kirish
+              {loginLoading ? (
+                <div>
+                  <Spin
+                    indicator={<LoadingOutlined spin />}
+                    className="!text-white"
+                  />
+                </div>
+              ) : (
+                "Kirish"
+              )}
             </button>
           </Form>
         </div>
