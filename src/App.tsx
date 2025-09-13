@@ -8,6 +8,8 @@ import Employees from "./pages/Employees";
 import RegisterLayout from "./layout/RegisterLayout";
 import DoctorLayout from "./layout/DoctorLayout";
 import TokenRefresher from "./components/tokenRefresh";
+import PriviteRote from "./queries/PriviteRote";
+import Registration from "./pages/Registration";
 
 function App() {
   return (
@@ -16,13 +18,56 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="" element={<Layout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/patients" element={<Patients />} />
-          <Route path="/employees" element={<Employees />} />
+          <Route
+            path="/dashboard"
+            element={
+              <PriviteRote>
+                <Dashboard />
+              </PriviteRote>
+            }
+          />
+          <Route
+            path="/patients"
+            element={
+              <PriviteRote>
+                <Patients />
+              </PriviteRote>
+            }
+          />
+          <Route
+            path="/employees"
+            element={
+              <PriviteRote>
+                <Employees />
+              </PriviteRote>
+            }
+          />
+          <Route
+            path="/registration"
+            element={
+              <PriviteRote>
+                <Registration />
+              </PriviteRote>
+            }
+          />
         </Route>
 
-        <Route path="register" element={<RegisterLayout />}></Route>
-        <Route path="doctor" element={<DoctorLayout />}></Route>
+        <Route
+          path="register"
+          element={
+            <PriviteRote>
+              <RegisterLayout />
+            </PriviteRote>
+          }
+        ></Route>
+        <Route
+          path="doctor"
+          element={
+            <PriviteRote>
+              <DoctorLayout />
+            </PriviteRote>
+          }
+        ></Route>
       </Routes>
     </div>
   );

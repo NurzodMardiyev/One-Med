@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import { LuUser } from "react-icons/lu";
 import { BsTelephone } from "react-icons/bs";
 import { PiCalendarDotsLight } from "react-icons/pi";
-
 export default function Patients() {
   const handleTakeSearchValue = (value: string) => {
     console.log(value);

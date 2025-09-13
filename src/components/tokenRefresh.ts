@@ -24,7 +24,7 @@ const TokenRefresher = () => {
       } catch (error) {
         console.error("Failed to refresh token:", error);
       }
-    }, 1 * 60 * 1000); // 15 minut
+    }, 15 * 60 * 1000); // 15 minut
 
     return () => clearInterval(interval);
   }, []);

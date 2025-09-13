@@ -26,7 +26,7 @@ export default function Sidebar() {
   const items: MenuItem[] = [
     { key: "dashboard", icon: <IoHomeOutline />, label: "Bosh sahifa" },
     { key: "patients", icon: <LuUsers />, label: "Bemorlar" },
-    { key: "signIn", icon: <LuUserPlus />, label: "Royhatdan o'tish" },
+    { key: "registration", icon: <LuUserPlus />, label: "Royhatdan o'tish" },
     { key: "employees", icon: <TbReportMedical />, label: "Xodimlar" },
     { key: "settings", icon: <IoSettingsOutline />, label: "Sozlamalar " },
   ];

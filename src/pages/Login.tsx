@@ -84,10 +84,10 @@ export default function Login() {
             layout="vertical"
             className="inline-block  w-full "
           >
-            <Form.Item name="username" label="Username">
+            <Form.Item name="login" label="Username yoki Telefon raqam">
               <Input
                 // mask={phoneMask}
-                placeholder="Faydalanuvchi Ismi"
+                placeholder="Faydalanuvchi Ismi yoki tel raqami"
                 className="w-full px-2 outline-none border-[0.5px] border-[#D9D9D9] !py-2 !rounded-[4px] hover:border-[#1677ff] focus:border-[#1677ff] focus:shadow-[0_0_0_2px_rgba(5,145,255,0.1)] transition"
               />
             </Form.Item>

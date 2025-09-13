@@ -21,3 +21,8 @@ body {
 svg:focus {
   outline: none !important;
 }
+
+.ant-select-tree-node-content-wrapper-open {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
