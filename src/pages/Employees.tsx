@@ -1,6 +1,15 @@
 import { FiPlus } from "react-icons/fi";
 import { IoSearch } from "react-icons/io5";
-import { Form, Input, Modal, Pagination, Select, Spin, TreeSelect } from "antd";
+import {
+  Form,
+  Input,
+  Modal,
+  notification,
+  Pagination,
+  Select,
+  Spin,
+  TreeSelect,
+} from "antd";
 import { Link } from "react-router-dom";
 import { LuUser } from "react-icons/lu";
 import { BsTelephone } from "react-icons/bs";
@@ -47,6 +56,22 @@ export default function Employees() {
   const [role, setRole] = useState("");
   const per_page = 10;
 
+  // natification
+
+  type NotificationType = "success" | "info" | "warning" | "error";
+
+  const [api, contextHolder] = notification.useNotification();
+
+  const openNotificationWithIcon = (
+    type: NotificationType,
+    message: string
+  ) => {
+    api[type]({
+      message: "Notification Title",
+      description: message,
+    });
+  };
+
   // Xodimlar olish
   const { data: employeesData, isLoading } = useQuery({
     queryKey: ["employees", page, per_page, search, role],
@@ -87,6 +112,9 @@ export default function Employees() {
       queryClient.invalidateQueries(["employees"]); // faqat shu query refresh bo‘ladi
       setIsModalOpen(false);
     },
+    onError: (error) => {
+      openNotificationWithIcon("error", error.message);
+    },
   });
 
   const addEmployeeFunc = (value: EmployeeObjType) => {
@@ -107,6 +135,7 @@ export default function Employees() {
   }
   return (
     <div>
+      {contextHolder}
       {/* Header */}
       <div className="flex items-center justify-between mt-[30px]">
         <div>

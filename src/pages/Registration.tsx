@@ -1,5 +1,13 @@
 import { MdOutlinePersonAddAlt } from "react-icons/md";
-import { AutoComplete, DatePicker, Form, Input, Select, Spin } from "antd";
+import {
+  AutoComplete,
+  DatePicker,
+  Form,
+  Input,
+  notification,
+  Select,
+  Spin,
+} from "antd";
 import dayjs, { Dayjs } from "dayjs";
 import { useMutation, useQueryClient } from "react-query";
 import { OneMedAdmin } from "../queries/query";
@@ -115,10 +123,21 @@ export default function Registration() {
     null
   );
 
-  // const { message } = App.useApp();
-  // const showMessage = (text: string) => {
-  //   message.success(text);
-  // };
+  // natification
+
+  type NotificationType = "success" | "info" | "warning" | "error";
+
+  const [api, contextHolder] = notification.useNotification();
+
+  const openNotificationWithIcon = (
+    type: NotificationType,
+    message: string
+  ) => {
+    api[type]({
+      message: "Notification Title",
+      description: message,
+    });
+  };
 
   // Yangi bemor qo‘shish
   const { mutate: addPatientMutate, isLoading: addPatientLoading } =
@@ -134,7 +153,8 @@ export default function Registration() {
           console.log("Yangi bemor qo‘shildi:", data);
           console.log("ishlavotti");
         },
-        onError: () => {
+        onError: (err) => {
+          openNotificationWithIcon("error", err.message);
           console.log("Error");
           // showMessage("Yangi bemor muvaffaqqiyatli qo'shildi!");
           // error("Xatolik yuz berdi!");
@@ -307,6 +327,7 @@ export default function Registration() {
 
   return (
     <div className="w-full flex justify-center py-2 flex-col register">
+      {contextHolder}
       {/* Search */}
       <div className="border md:w-full w-full border-[#e3e3e3] rounded-[10px] px-6 py-4 mb-3">
         <Form className="flex items-center">
