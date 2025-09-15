@@ -39,8 +39,8 @@ export default function Sidebar() {
     navigate(e.key, { replace: true });
   };
   return (
-    <div className="min-h-screen w-[300px] flex flex-col">
-      <div className="mb-4">
+    <div className="min-h-screen w-[300px] flex flex-col ">
+      <div className="pb-4 ">
         <Menu
           onClick={handleEvent}
           inlineCollapsed={collapsed}

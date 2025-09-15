@@ -1,18 +1,11 @@
 import { MdOutlinePersonAddAlt } from "react-icons/md";
-import {
-  AutoComplete,
-  DatePicker,
-  Form,
-  Input,
-  message,
-  Select,
-  Spin,
-} from "antd";
+import { AutoComplete, DatePicker, Form, Input, Select, Spin } from "antd";
 import dayjs, { Dayjs } from "dayjs";
 import { useMutation, useQueryClient } from "react-query";
 import { OneMedAdmin } from "../queries/query";
 import { LoadingOutlined } from "@ant-design/icons";
 import { useState } from "react";
+
 import "../App.css";
 
 // ------- Types ---------
@@ -122,40 +115,34 @@ export default function Registration() {
     null
   );
 
-  const [messageApi, contextHolder] = message.useMessage();
+  // const { message } = App.useApp();
+  // const showMessage = (text: string) => {
+  //   message.success(text);
+  // };
 
-  const success = (text: string) => {
-    messageApi.open({
-      type: "success",
-      content: text,
-    });
-  };
-  const error = (text: string) => {
-    messageApi.open({
-      type: "error",
-      content: text,
-    });
-  };
-
-  // ✅ Yangi bemor qo‘shish
+  // Yangi bemor qo‘shish
   const { mutate: addPatientMutate, isLoading: addPatientLoading } =
     useMutation<PatientResponse, Error, PatientRequest>(
       (obj) => OneMedAdmin.addPatient(obj),
       {
         onSuccess: (data) => {
           queryClient.invalidateQueries();
+          // showMessage("Yangi bemor muvaffaqqiyatli qo'shildi!");
+          // ✅ Forma tozalash
+          form.resetFields();
+          setSelectedPatientId(null);
           console.log("Yangi bemor qo‘shildi:", data);
-          // setSelectedPatientId(data.data.id);
-          success("Yangi bemor muvaffaqqiyatli qo'shildi!");
+          console.log("ishlavotti");
         },
         onError: () => {
           console.log("Error");
-          error("Xatolik yuz berdi!");
+          // showMessage("Yangi bemor muvaffaqqiyatli qo'shildi!");
+          // error("Xatolik yuz berdi!");
         },
       }
     );
 
-  // ✅ Eski bemorni yangilash
+  // Eski bemorni yangilash
   const { mutate: updatePatientMutate, isLoading: updatePatientLoading } =
     useMutation<PatientResponse, Error, { id: string; obj: PatientRequest }>(
       ({ id, obj }) => OneMedAdmin.updatePatient(id, obj),
@@ -163,15 +150,15 @@ export default function Registration() {
         onSuccess: (data) => {
           queryClient.invalidateQueries();
           console.log("Bemor yangilandi:", data);
-          success("Bemor muvaffaqqiyatli yangilandi!");
+          // success("Bemor muvaffaqqiyatli yangilandi!");
         },
         onError: () => {
-          error("Xatolik yuz berdi!");
+          // error("Xatolik yuz berdi!");
         },
       }
     );
 
-  // ✅ Submit qilganda POST/PUT aniqlash
+  // Submit qilganda POST/PUT aniqlash
   const handleSendPatientValues = (value: sendResponseValuesType) => {
     const object: PatientRequest = {
       ...value,
@@ -201,7 +188,7 @@ export default function Registration() {
     }
   };
 
-  // ✅ Search
+  // Search
   const [options, setOptions] = useState<PatientOption[]>([]);
   const [value, setValue] = useState("");
   const { mutate: searchMutate } = useMutation<any, Error, string>(
@@ -231,7 +218,7 @@ export default function Registration() {
     }
   };
 
-  // ✅ Select qilganda eski bemorni olish
+  // Select qilganda eski bemorni olish
   const { mutate: selectMutate } = useMutation<
     PatientSelectResponse,
     Error,
@@ -321,7 +308,6 @@ export default function Registration() {
   return (
     <div className="w-full flex justify-center py-2 flex-col register">
       {/* Search */}
-      {contextHolder}
       <div className="border md:w-full w-full border-[#e3e3e3] rounded-[10px] px-6 py-4 mb-3">
         <Form className="flex items-center">
           <Form.Item name="search" className="!m-0 relative flex-1">
@@ -333,10 +319,11 @@ export default function Registration() {
               onChange={(data) => setValue(data)}
               placeholder="Bemor qidiring..."
               className="!w-full !h-[40px]"
+              notFoundContent="Bemor topilmadi!"
             />
           </Form.Item>
           <button className="px-[30px] bg-[#2B7FFF] !h-[40px] rounded-l-[0px] rounded-md text-white font-[500] cursor-pointer">
-            {selectedPatientId ? "Update" : "Submit"}
+            Izlash
           </button>
         </Form>
       </div>
@@ -397,6 +384,7 @@ export default function Registration() {
               name="middle_name"
               label="Otasining ismi"
               className="col-span-2"
+              rules={[{ required: true, message: "Otasining ismini kiriting" }]}
             >
               <Input className="w-full !h-[40px]" />
             </Form.Item>
@@ -404,6 +392,7 @@ export default function Registration() {
               name="phone"
               label="Telefon raqam"
               className="col-span-2"
+              rules={[{ required: true, message: "Telefon raqam kiriting" }]}
             >
               <Input className="w-full  !h-[40px]" />
             </Form.Item>
@@ -411,6 +400,7 @@ export default function Registration() {
               name="blood_group"
               label="Qon guruhi"
               className="col-span-2"
+              rules={[{ required: true, message: "Qon guruhi kiriting" }]}
             >
               <Select
                 className="w-full  !h-[40px]"
@@ -445,8 +435,8 @@ export default function Registration() {
               <Select
                 className="w-full  !h-[40px]"
                 options={[
-                  { value: "male", label: "Male" },
-                  { value: "female", label: "Female" },
+                  { value: "male", label: "Erkak" },
+                  { value: "female", label: "Ayol" },
                 ]}
               />
             </Form.Item>
@@ -583,24 +573,6 @@ export default function Registration() {
           ) : (
             ""
           )}
-
-          {/* driver_license  */}
-          {/* <div>
-            <h4 className="text-[16px] font-[500] mb-2">
-              Haydovchilik guvohnomasi
-            </h4>
-            <div className="grid grid-cols-6 gap-3">
-              <Form.Item name="number" className="col-span-3">
-                <Input
-                  placeholder="Card number"
-                  className="w-full  !h-[40px]"
-                />
-              </Form.Item>
-              <Form.Item name="jshr" className="col-span-3">
-                <Input placeholder="Card JSHR" className="w-full  !h-[40px]" />
-              </Form.Item>
-            </div>
-          </div> */}
         </div>
 
         <div className="px-[24px] pb-4">
@@ -636,7 +608,7 @@ export default function Registration() {
             Formani tozalash
           </button>
           <button className="px-[30px] bg-[#2B7FFF] py-2.5 rounded-md text-white font-[500] cursor-pointer">
-            {selectedPatientId ? "Update" : "Submit"}
+            {selectedPatientId ? "Yangilash" : "Qo'shsih"}
           </button>
         </div>
       </Form>

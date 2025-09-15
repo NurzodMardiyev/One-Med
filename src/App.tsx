@@ -10,6 +10,7 @@ import DoctorLayout from "./layout/DoctorLayout";
 import TokenRefresher from "./components/tokenRefresh";
 import PriviteRote from "./queries/PriviteRote";
 import Registration from "./pages/Registration";
+import PatientsInfo from "./components/PatientsInfo";
 
 function App() {
   return (
@@ -47,6 +48,14 @@ function App() {
             element={
               <PriviteRote>
                 <Registration />
+              </PriviteRote>
+            }
+          />
+          <Route
+            path="patients/:id"
+            element={
+              <PriviteRote>
+                <PatientsInfo />
               </PriviteRote>
             }
           />

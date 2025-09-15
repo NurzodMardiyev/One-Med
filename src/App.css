@@ -30,3 +30,7 @@ svg:focus {
   border-top-right-radius: 0px !important;
   border-bottom-right-radius: 0px !important;
 }
+.seg .ant-segmented-item {
+  padding: 4px !important ;
+  font-weight: 500 !important;
+}

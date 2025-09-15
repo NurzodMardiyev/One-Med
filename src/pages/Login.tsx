@@ -1,10 +1,12 @@
-import { Form, Input, Spin } from "antd";
+import { Form, Input, notification, Spin } from "antd";
 import Container from "../components/Container";
 import { FaMedrt } from "react-icons/fa";
 import { useMutation, useQueryClient } from "react-query";
 import { OneMedAdmin } from "../queries/query";
 import { useNavigate } from "react-router-dom";
 import { LoadingOutlined } from "@ant-design/icons";
+import { RuleObject } from "antd/es/form";
+import { StoreValue } from "antd/es/form/interface";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,6 +16,18 @@ export default function Login() {
   };
   type AuthResponse = {
     data: { role: string };
+  };
+
+  type NotificationType = "success" | "info" | "warning" | "error";
+
+  const [api, contextHolder] = notification.useNotification();
+
+  const openNotificationWithIcon = (type: NotificationType) => {
+    api[type]({
+      message: "Notification Title",
+      description:
+        "This is the content of the notification. This is the content of the notification. This is the content of the notification.",
+    });
   };
 
   const queryClient = useQueryClient();
@@ -36,8 +50,9 @@ export default function Login() {
         navigate("/");
       }
     },
-    onError: () => {
-      console.log("Mutation Xato");
+    onError: (error) => {
+      console.log(error?.message);
+      openNotificationWithIcon("error");
     },
   });
 
@@ -70,6 +85,7 @@ export default function Login() {
 
   return (
     <div className="bg-[#ececec]">
+      {contextHolder}
       <Container className="flex justify-center items-center min-h-screen ">
         <div className="border border-[#D9D9D9] flex flex-col items-center gap-10 md:w-md w-full px-3 md:p-10 rounded-md bg-white">
           <div className=" flex flex-col items-center">
@@ -86,14 +102,44 @@ export default function Login() {
             layout="vertical"
             className="inline-block  w-full "
           >
-            <Form.Item name="login" label="Username yoki Telefon raqam">
+            <Form.Item
+              name="login"
+              label="Username yoki Telefon raqam"
+              rules={[
+                {
+                  required: true,
+                  message: "Username yoki Telefon raqam kiriting",
+                },
+              ]}
+            >
               <Input
-                // mask={phoneMask}
-                placeholder="Faydalanuvchi Ismi yoki tel raqami"
+                placeholder="Foydalanuvchi ismi yoki tel raqami"
                 className="w-full px-2 outline-none border-[0.5px] border-[#D9D9D9] !py-2 !rounded-[4px] hover:border-[#1677ff] focus:border-[#1677ff] focus:shadow-[0_0_0_2px_rgba(5,145,255,0.1)] transition"
               />
             </Form.Item>
-            <Form.Item name="password" label="Pasword">
+            <Form.Item
+              name="password"
+              label="Pasword"
+              rules={[
+                { required: true, message: "Parolni kiriting!" },
+                {
+                  validator: (_: RuleObject, value: StoreValue) => {
+                    if (!value) {
+                      return Promise.resolve();
+                    }
+                    const hasUpperCase = /[A-Z]/.test(value as string);
+                    if (!hasUpperCase) {
+                      return Promise.reject(
+                        new Error(
+                          "Parolda hech bo‘lmasa bitta katta harf bo‘lishi kerak!"
+                        )
+                      );
+                    }
+                    return Promise.resolve();
+                  },
+                },
+              ]}
+            >
               <Input.Password
                 type="password"
                 className="!py-2 !rounded-[4px]"

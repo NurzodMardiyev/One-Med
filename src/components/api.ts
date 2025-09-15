@@ -2,7 +2,7 @@ import axios from "axios";
 import SecureStorage from "react-secure-storage";
 
 const api = axios.create({
-  baseURL: "https://onemed-backend.onrender.com",
+  baseURL: "https://api.babyortomed.one-med.uz",
 });
 
 // Har bir so‘rovga access token qo‘shish
@@ -37,7 +37,7 @@ api.interceptors.response.use(
 
       try {
         const response = await axios.post(
-          `https://onemed-backend.onrender.com/v1/auth/login`,
+          `https://api.babyortomed.one-med.uz/v1/auth/login`,
           { refresh: refreshToken }
         );
 

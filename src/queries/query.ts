@@ -3,7 +3,7 @@ import SecureStorage from "react-secure-storage";
 import api from "../components/api";
 import { Dayjs } from "dayjs";
 
-const baseApi = "https://onemed-backend.onrender.com";
+const baseApi = "https://api.babyortomed.one-med.uz";
 
 type ServiceItem = {
   id: string;
@@ -113,6 +113,33 @@ type PatientRequest = Omit<
   driver_license?: DriverLicense;
 };
 
+// Bitta bemorning qisqa ma’lumotlari (search uchun)
+type PatientSearchItem = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  gender: "male" | "female"; // faqat shu ikkitasi kelayapti
+  status: "active" | "inactive" | string; // agar boshqa statuslar bo‘lishi mumkin bo‘lsa string qoldiramiz
+  date_of_birth: string; // YYYY-MM-DD format
+  last_visit_date: string | null; // oxirgi tashrif sanasi, null bo‘lishi mumkin
+  created_at: string; // ISO datetime
+};
+
+// Pagination meta ma’lumotlari
+type PaginationMeta = {
+  total_pages: number;
+  total_items: number;
+  current_page: number;
+};
+
+// To‘liq search response
+type PatientSearchResponse = {
+  success: boolean;
+  message: string;
+  data: PatientSearchItem[];
+  meta: PaginationMeta;
+};
 
 export const OneMedAdmin = {
   authLogin: async (obj:{phone: string, password: string}) => {
@@ -217,5 +244,22 @@ updatePatient: async (id: string, obj: PatientRequest): Promise<PatientResponse>
   });
   return response.data;
 },
+
+getPatientsAll: async (page: number,per_page?: number, search?:string, status?: string, gender?: string): Promise<PatientSearchResponse> => {
+    const response = await api.get(`${baseApi}/v1/patients`,  {
+      params: {
+        page: page  || undefined,
+        per_page: per_page || undefined,
+        search: search || undefined,
+        status: status || undefined,
+        gender: gender || undefined
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    return response.data;
+  },
 
 }
