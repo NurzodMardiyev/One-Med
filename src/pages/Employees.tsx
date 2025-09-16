@@ -197,7 +197,7 @@ export default function Employees() {
           (item: { id: string; fio: string; phone: string; role: string }) => (
             <Link
               key={item.id}
-              to={`patients/${item.id}`}
+              to={`${item.id}`}
               className="px-6 py-4 border border-[#E0E6EB] flex items-center justify-between rounded-[10px] bg-[#fff] mb-3"
             >
               <div className="flex items-center gap-3">
@@ -267,7 +267,7 @@ export default function Employees() {
             </Form.Item>
 
             {showService && (
-              <Form.Item name="services" label="Servislar">
+              <Form.Item name={["doctor", "services"]} label="Servislar">
                 <TreeSelect
                   onClick={takeServicesFromBack}
                   showSearch

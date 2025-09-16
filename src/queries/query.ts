@@ -2,6 +2,7 @@ import axios from "axios";
 import SecureStorage from "react-secure-storage";
 import api from "../components/api";
 import { Dayjs } from "dayjs";
+import { EmployeeResponse } from "../components/EmployeeInfo";
 
 const baseApi = "https://api.babyortomed.one-med.uz";
 
@@ -141,6 +142,109 @@ type PatientSearchResponse = {
   meta: PaginationMeta;
 };
 
+type visitDoctorType = {
+  doctor: string,
+  services?: string[]
+}
+
+type Service = {
+  id: string;
+  name: string;
+  price: number;
+};
+
+type Visit = {
+  id: string;
+  doctor: string;
+  services: Service[];
+  total_price: number;
+  diagnosis: string | null;
+  status: "pending" | "completed" | "cancelled" | string; // agar status doim faqat shu 3 bo'lsa union yozamiz, boshqa bo'lishi mumkin bo'lsa string qoldiramiz
+};
+
+type Meta = {
+  total_pages: number;
+  total_items: number;
+  current_page: number;
+};
+
+type VisitsResponse = {
+  success: boolean;
+  message: string;
+  data: Visit[];
+  meta: Meta;
+};
+
+// Doktor kategoriyalari
+export type Category = {
+  id: string;
+  name: string;
+  services: Service[];
+};
+
+// Doktor statistikasi
+export type PatientsStats = {
+  total_visits: number;
+  total_patients: number;
+  total_revenue: number;
+  daily_stats: number[];
+};
+
+// Doktor modeli
+export type Doctor = {
+  id: string;
+  fio: string;
+  username: string;
+  phone: string;
+  role: "doctor" | "admin" | string;
+  status: "active" | "inactive" | string;
+  experience_year: number | null;
+  more: string | null;
+  categories: Category[];
+  patients_stats: PatientsStats;
+};
+
+// Doktor API response
+export type DoctorResponse = {
+  success: boolean;
+  message: string;
+  data: Doctor;
+};
+
+export type DataCategoryType = {
+  id: string;
+  name: string;
+  services: ServiceItem[];  // ✅ to‘g‘rilandi
+};
+
+export type CategoryName = {
+  success: boolean;
+  data: DataCategoryType;
+};
+
+
+type CategoryData = {
+  id: string;
+  name: string;
+  services: Service[];
+};
+
+type CategoryResponse = {
+  success: boolean;
+  data: CategoryData;
+};
+
+type ServiceRequest = {
+  name: string;
+  price: number;
+};
+
+type CreateCategoryServiceRequest = {
+  category: string; // category id
+  services: ServiceRequest[];
+};
+
+
 export const OneMedAdmin = {
   authLogin: async (obj:{phone: string, password: string}) => {
     const response = await axios.post(`${baseApi}/v1/auth/login`, obj, {
@@ -261,5 +365,76 @@ getPatientsAll: async (page: number,per_page?: number, search?:string, status?: 
 
     return response.data;
   },
+
+
+getServicesFromDoctor: async (id: string): Promise<Category[]> => {
+  const response = await api.get(`${baseApi}/v1/users/${id}`, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  return response.data.data.doctor.categories;
+},
+
+  
+  addNewVisit: async (id: string, obj: visitDoctorType): Promise<any> => {
+  const response = await api.post(`${baseApi}/v1/patients/${id}/visits`, obj, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+},
+
+patientVisitesData: async (id: string, page?: number, per_page?: number): Promise<VisitsResponse> => {
+  const response = await api.get(`${baseApi}/v1/patients/${id}/visits`, {
+    params: {
+      page: page || undefined,
+      per_page: per_page || undefined
+    },
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+},
+
+ addCategory: async (obj: {name: string}): Promise<CategoryName> => {
+  const response = await api.post(`${baseApi}/v1/service-categories`, obj, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+},
+
+ addServices: async (obj: CreateCategoryServiceRequest): Promise<CategoryResponse> => {
+  const response = await api.post(`${baseApi}/v1/services`, obj, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+},
+
+getCategorylist: async (page: number, per_page: number): Promise<any> => {
+  const response = await api.get(`${baseApi}/v1/service-categories?page=${page}&per_page=${per_page}`, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  return response.data;
+},
+
+getEmployee: async (id: string): Promise<EmployeeResponse> => {
+  const response = await api.get(`${baseApi}/v1/users/${id}`, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+},
 
 }

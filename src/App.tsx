@@ -11,6 +11,8 @@ import TokenRefresher from "./components/tokenRefresh";
 import PriviteRote from "./queries/PriviteRote";
 import Registration from "./pages/Registration";
 import PatientsInfo from "./components/PatientsInfo";
+import Settings from "./pages/Settings";
+import EmployeeInfo from "./components/EmployeeInfo";
 
 function App() {
   return (
@@ -56,6 +58,23 @@ function App() {
             element={
               <PriviteRote>
                 <PatientsInfo />
+              </PriviteRote>
+            }
+          />
+
+          <Route
+            path="employees/:id"
+            element={
+              <PriviteRote>
+                <EmployeeInfo />
+              </PriviteRote>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <PriviteRote>
+                <Settings />
               </PriviteRote>
             }
           />

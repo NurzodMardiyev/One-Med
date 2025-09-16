@@ -7,9 +7,10 @@ import {
   notification,
   Select,
   Spin,
+  TreeSelect,
 } from "antd";
 import dayjs, { Dayjs } from "dayjs";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import { OneMedAdmin } from "../queries/query";
 import { LoadingOutlined } from "@ant-design/icons";
 import { useState } from "react";
@@ -44,6 +45,12 @@ type sendResponseValuesType = {
   country: string;
   height: number;
   weight: number;
+};
+// Servis modeli
+type Service = {
+  id: string;
+  name: string;
+  price: number;
 };
 
 type PatientOption = {
@@ -114,6 +121,11 @@ type PatientRequest = Omit<
   driver_license?: DriverLicense;
 };
 
+export type Category = {
+  id: string;
+  name: string;
+  services: Service[];
+};
 // ------- Component ---------
 export default function Registration() {
   const [form] = Form.useForm();
@@ -139,6 +151,31 @@ export default function Registration() {
     });
   };
 
+  // Shifokor tanlaganda ID ni ushlab turadigan state
+  const [handleSelectDoctorState, setHandleSelectDoctorState] = useState("");
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+
+  const obj = {
+    doctor: handleSelectDoctorState,
+    services: selectedServices,
+  };
+
+  // yangi tashrif
+  const { mutate: addEmployeMutate, isLoading: addEmpLoading } = useMutation<
+    any,
+    Error,
+    string
+  >((id) => OneMedAdmin.addNewVisit(id, obj), {
+    onSuccess: () => {
+      queryClient.invalidateQueries(["patient", obj]);
+      setHandleSelectDoctorState("");
+      setSelectedServices([]);
+    },
+    onError: (error) => {
+      console.log(error);
+    },
+  });
+
   // Yangi bemor qo‘shish
   const { mutate: addPatientMutate, isLoading: addPatientLoading } =
     useMutation<PatientResponse, Error, PatientRequest>(
@@ -148,6 +185,10 @@ export default function Registration() {
           queryClient.invalidateQueries();
           // showMessage("Yangi bemor muvaffaqqiyatli qo'shildi!");
           // ✅ Forma tozalash
+
+          if (handleSelectDoctorState !== "" && selectedServices.length !== 0) {
+            addEmployeMutate(data.data.id);
+          }
           form.resetFields();
           setSelectedPatientId(null);
           console.log("Yangi bemor qo‘shildi:", data);
@@ -317,7 +358,49 @@ export default function Registration() {
     setDocType(value);
   };
 
-  if (addPatientLoading || updatePatientLoading) {
+  // Shifokor tanlaganda ID ni ushlab turadigan state
+  console.log(selectedServices);
+
+  // 3. Xodimlar (shifokorlar) ro‘yxati
+  const { data: employeesData } = useQuery({
+    queryKey: ["employees", 1, 20, "", "doctor"],
+    queryFn: () => OneMedAdmin.getEmployeesFilter(1, 20, "", "doctor"),
+    keepPreviousData: true,
+    staleTime: Infinity,
+    cacheTime: Infinity,
+  });
+
+  // 4. Doktordan xizmatlar olish
+  const { data: categories } = useQuery<Category[]>({
+    queryKey: ["services", handleSelectDoctorState],
+    queryFn: () => OneMedAdmin.getServicesFromDoctor(handleSelectDoctorState),
+    enabled: !!handleSelectDoctorState,
+    staleTime: Infinity,
+    cacheTime: Infinity,
+  });
+
+  // Select uchun shifokor options
+  const employeeOptions =
+    employeesData?.data?.map((item: any) => ({
+      value: item.id,
+      label: item.fio,
+    })) || [];
+
+  // TreeSelect uchun service daraxti
+
+  const treeData2 = categories
+    ? categories.map((category: Category) => ({
+        value: category.id,
+        title: category.name,
+        selectable: false,
+        children: category.services.map((srv: Service) => ({
+          value: srv.id,
+          title: srv.name,
+        })),
+      }))
+    : [];
+
+  if (addPatientLoading || (updatePatientLoading && addEmpLoading)) {
     return (
       <div className="absolute left-0 top-0 z-[9999] w-full h-screen flex justify-center items-center bg-white/20 backdrop:blur-2xl">
         <Spin indicator={<LoadingOutlined spin />} size="large" />
@@ -326,10 +409,10 @@ export default function Registration() {
   }
 
   return (
-    <div className="w-full flex justify-center py-2 flex-col register">
+    <div className="w-full flex justify-center py-2 flex-col ">
       {contextHolder}
       {/* Search */}
-      <div className="border md:w-full w-full border-[#e3e3e3] rounded-[10px] px-6 py-4 mb-3">
+      <div className="border md:w-full w-full border-[#e3e3e3] rounded-[10px] px-6 py-4 mb-3 register">
         <Form className="flex items-center">
           <Form.Item name="search" className="!m-0 relative flex-1">
             <AutoComplete
@@ -619,6 +702,45 @@ export default function Registration() {
             <Form.Item name="weight" label="Og'irligi" className="col-span-2">
               <Input className="w-full  !h-[40px]" />
             </Form.Item>
+          </div>
+        </div>
+
+        {/* Servise qo'shsih */}
+
+        <div className="px-[24px] pb-4">
+          <h3 className="text-[18px] font-[600]">
+            Bemorni shifokorga biriktirish
+          </h3>
+          <div className="grid grid-cols-6 gap-3 mt-2">
+            <div className="flex flex-col gap-1 col-span-2">
+              <label className="text-sm">Shifokor</label>
+              <Select
+                className="w-full !h-[40px]"
+                onChange={(val) => setHandleSelectDoctorState(val)}
+                options={employeeOptions}
+                // value={selectedDoctor}
+              />
+            </div>
+
+            {handleSelectDoctorState && (
+              <div className="flex flex-col gap-1 col-span-2">
+                <label className="text-sm ">Servislar</label>
+                <TreeSelect
+                  showSearch
+                  style={{ width: "100%" }}
+                  className="!min-h-[40px]"
+                  multiple
+                  placeholder="Please select"
+                  allowClear
+                  treeCheckable
+                  treeDefaultExpandAll
+                  showCheckedStrategy={TreeSelect.SHOW_CHILD}
+                  treeData={treeData2}
+                  value={selectedServices}
+                  onChange={(val) => setSelectedServices(val)}
+                />
+              </div>
+            )}
           </div>
         </div>
         <div className="px-[24px] pb-4 flex gap-4 justify-end">

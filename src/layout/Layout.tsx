@@ -6,7 +6,7 @@ import { useEffect } from "react";
 
 export default function Layout() {
   const { collapsed } = useCreateContext();
-  console.log(collapsed);
+  // console.log(collapsed);
 
   useEffect(() => {
     const handlePopState = () => {
