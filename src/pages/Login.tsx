@@ -43,9 +43,9 @@ export default function Login() {
       if (data?.data.role === "admin") {
         navigate("/dashboard");
       } else if (data?.data.role === "doctor") {
-        navigate("/doctor");
+        navigate("/doctor/patients");
       } else if (data?.data.role === "registrator") {
-        navigate("/register");
+        navigate("/register/registration");
       } else {
         navigate("/");
       }

@@ -191,8 +191,9 @@ export default function Registration() {
           }
           form.resetFields();
           setSelectedPatientId(null);
+          openNotificationWithIcon("success", "Yangi bemor qo‘shildi");
           console.log("Yangi bemor qo‘shildi:", data);
-          console.log("ishlavotti");
+          // console.log("ishlavotti");
         },
         onError: (err) => {
           openNotificationWithIcon("error", err.message);
@@ -210,7 +211,9 @@ export default function Registration() {
       {
         onSuccess: (data) => {
           queryClient.invalidateQueries();
+          form.resetFields();
           console.log("Bemor yangilandi:", data);
+          openNotificationWithIcon("success", "Bemor yangilandi");
           // success("Bemor muvaffaqqiyatli yangilandi!");
         },
         onError: () => {

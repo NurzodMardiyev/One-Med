@@ -7,13 +7,18 @@ import {
   Form,
   GetProp,
   Input,
+  Modal,
+  Select,
   Spin,
   TreeSelect,
   TreeSelectProps,
 } from "antd";
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { OneMedAdmin } from "../queries/query";
+import { GetOneCategoryResponse, OneMedAdmin } from "../queries/query";
 import { useEffect, useState } from "react";
+import { BiSolidEditAlt } from "react-icons/bi";
+import { IoCheckmarkDoneSharp } from "react-icons/io5";
+import { IoTrashOutline } from "react-icons/io5";
 
 type ServiceType = {
   id: string;
@@ -64,11 +69,67 @@ type CreateCategoryServiceRequest = {
 
 type DefaultOptionType = GetProp<TreeSelectProps, "treeData">[number];
 
+export interface Category {
+  id: string;
+  name: string;
+  services: Service[];
+}
+
+export interface Doctor {
+  categories: Category;
+  experience_year: number;
+  patients_stats: string;
+}
+
+export interface UserProfile {
+  id: string;
+  access_token: string;
+  refresh_token: string;
+  fio: string;
+  username: string;
+  role: "admin" | "doctor" | "user"; // agar role fixed bo‘lsa union qildim
+  phone: string;
+  doctor: Doctor | null;
+  status: string;
+  more: string | null;
+}
+
+export interface UserProfileResponse {
+  success: boolean;
+  data: UserProfile;
+}
+
+export interface DoctorPayload {
+  experience_year?: number;
+  services?: string[]; // services Select dan keladigan value lar
+}
+
+export interface UpdateProfilePayload {
+  fio?: string;
+  username?: string;
+  phone?: string;
+  role?: string;
+  more?: string;
+  doctor?: DoctorPayload;
+}
+
 export default function Settings() {
   const [form] = Form.useForm();
+  const [categoryForm] = Form.useForm();
   const [checkAddCategoryName, setCheckCategoryName] =
     useState<DataCategoryType>();
   const [closeCat, setCloseCat] = useState(true);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [successIndex, setSuccessIndex] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [value, setValue] = useState<string | undefined>();
+  const [treeData, setTreeData] = useState<Omit<DefaultOptionType, "label">[]>(
+    []
+  );
+  const [deleteBool, setDeleteBool] = useState(false);
+
+  const per_page = 14;
 
   const queryClient = useQueryClient();
   const { mutate: categoryNameMutate, isLoading: categoryNameLoading } =
@@ -81,16 +142,18 @@ export default function Settings() {
             items: [...(form.getFieldValue("items") || []), { list: [] }],
           });
           setCheckCategoryName(data.data);
+          setDeleteBool(false);
         },
       }
     );
 
-  console.log(checkAddCategoryName);
+  // console.log(checkAddCategoryName);
 
   const addCategoryName = (value: { name: string }) => {
     categoryNameMutate(value);
   };
 
+  // Servislarni qo'shib kategoriyaga bog'lab qo'yish
   const { mutate: addServicesMutate, isLoading: addServicesLoading } =
     useMutation<ServicesResponse, Error, CreateCategoryServiceRequest>(
       (obj) => OneMedAdmin.addServices(obj),
@@ -101,12 +164,19 @@ export default function Settings() {
           console.log(data);
 
           // 🔥 Qayta bosh holatga qaytarish
-          setCheckCategoryName(undefined);
-          form.resetFields();
-          setCloseCat(true);
+
+          if (value) {
+            categoryForm.resetFields();
+            getOneCategoryRefetch();
+          } else {
+            setCheckCategoryName(undefined);
+            form.resetFields();
+            setCloseCat(true);
+          }
         },
       }
     );
+
   // Safe handler — Form'dan olingan values'ni to'g'rilaymiz va validate qilamiz
   const addCategoryWithServices = (values: any) => {
     // values.items - formdan keladi. Hamma holatni tekshirib olamiz.
@@ -158,11 +228,8 @@ export default function Settings() {
   };
 
   // Select uchun categoriyalarni olish
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
 
-  const per_page = 14;
-
+  // Categoriyalar Listini olib kelob olish
   const {
     data: getCategoryList,
     isLoading: getCatLoading,
@@ -172,12 +239,109 @@ export default function Settings() {
     queryKey: ["getCategorylist", page, per_page],
     queryFn: () => OneMedAdmin.getCategorylist(page, per_page),
     keepPreviousData: true,
+    staleTime: Infinity,
+    cacheTime: Infinity,
   });
 
-  const [value, setValue] = useState<string>();
-  const [treeData, setTreeData] = useState<Omit<DefaultOptionType, "label">[]>(
-    []
+  // Bitta kategoriya tanlanganda ushani malumotlarini olib kelish
+  const {
+    data: getOneCategory,
+    isLoading: getOneCategoryLoading,
+    refetch: getOneCategoryRefetch,
+  } = useQuery<GetOneCategoryResponse>({
+    queryKey: ["getCategory", value],
+    queryFn: () => OneMedAdmin.getOneCategory(value as string),
+    enabled: !!value,
+    keepPreviousData: true,
+  });
+
+  useEffect(() => {
+    if (getOneCategory?.data) {
+      // categoryni formga joylash
+      setCheckCategoryName(getOneCategory.data);
+
+      // servislarni formga kiritamiz
+      form.setFieldsValue({
+        items: [
+          {
+            list: getOneCategory.data.services.map((srv) => ({
+              name: srv.name,
+              price: srv.price,
+            })),
+          },
+        ],
+      });
+
+      setCloseCat(true);
+    }
+  }, [getOneCategory, form]);
+
+  // Servisni o'zini edit qilish backendga so'rov yuboradigan joyi
+  const { mutate: editServiceMutate } = useMutation<
+    { id: string; name: string; category: string; price: number },
+    Error,
+    {
+      id: string;
+      obj: { name: string; category: string; price: number };
+      index: number;
+    }
+  >(({ id, obj }) => OneMedAdmin.editService(id, obj), {
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries(["getCategory"]);
+      console.log("Edited:", data);
+
+      setSuccessIndex(variables.index);
+      setEditingIndex(null);
+
+      setTimeout(() => {
+        setSuccessIndex(null);
+      }, 2500);
+    },
+  });
+
+  // Servislarni delete qilish
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { mutate: deleteServiceMutate } = useMutation(
+    (id: string) => OneMedAdmin.deleteService(id),
+    {
+      onSuccess: (res) => {
+        console.log("Deleted:", res);
+        queryClient.invalidateQueries(["getCategory"]);
+        refetch();
+        setDeletingId(null);
+      },
+      onError: (error) => {
+        console.error("Delete error:", error);
+        setDeletingId(null);
+      },
+    }
   );
+
+  const handleDelete = (id: string) => {
+    setDeletingId(id); // faqat shu servisini loading qilamiz
+    deleteServiceMutate(id);
+  };
+
+  // bu servislarni edit qilish fncsiyasi
+  const handleEditServise = (
+    selectIndex: number,
+    obj: { name: string; price: number }
+  ) => {
+    const serviceId = checkAddCategoryName?.services[selectIndex]?.id;
+    const categoryId = checkAddCategoryName?.id;
+
+    if (serviceId && categoryId) {
+      const updateObj = {
+        name: obj.name,
+        category: categoryId,
+        price: obj.price,
+      };
+
+      setEditingIndex(selectIndex); // faqat shu index loading bo‘lsin
+      editServiceMutate({ id: serviceId, obj: updateObj, index: selectIndex });
+    }
+  };
 
   useEffect(() => {
     if (getCategoryList?.data) {
@@ -221,15 +385,151 @@ export default function Settings() {
       !isFetching && // hozir fetch bo‘lmayotgan bo‘lsa
       target.scrollTop + target.offsetHeight >= target.scrollHeight - 5
     ) {
-      console.log("Scroll pastga yetdi, keyingi sahifa yuklanmoqda...");
       setPage((prev) => prev + 1);
     }
   };
+
+  // const [editCatState, setEditCatState] = useState("");
+  // const { mutate: editCategoryMutate, isLoading: editCategoryLoading } =
+  //   useMutation<Category, Error, { id: string; obj: CategoryRequest }>(
+  //     ({ id, obj }) => OneMedAdmin.editCategory(id, obj),
+  //     {
+  //       onSuccess: (data) => {
+  //         queryClient.invalidateQueries(["getOneCategory"]);
+  //         setEditCatState(data.id);
+  //         setCheckCategoryName(data); // yangilangan category qaytadi
+  //       },
+  //     }
+  //   );
 
   const onChangeSelect = (newValue: string) => {
     console.log("Selected:", newValue);
     setValue(newValue);
   };
+
+  const [isCategoryEditing, setIsCategoryEditing] = useState(false);
+  const [isCategoryEditingChange, setIsCategoryEditingChange] = useState("");
+
+  const { mutate: updateCategoryMutate, isLoading: updateCategoryLoading } =
+    useMutation(
+      (data: { id: string; name: string }) =>
+        OneMedAdmin.updateCategory(data.id, { name: data.name }),
+      {
+        onSuccess: (res) => {
+          console.log("Category updated:", res);
+          queryClient.invalidateQueries(["getCategory"]);
+          setIsCategoryEditing(false);
+        },
+        onError: (err) => {
+          console.error("Update category error:", err);
+        },
+      }
+    );
+
+  const handleCategoryEdit = () => {
+    form.setFieldsValue({
+      categoryName: checkAddCategoryName?.name, // mavjud nomni inputga qo‘yish
+    });
+    setIsCategoryEditing(true);
+  };
+
+  const handleSaveCategory = () => {
+    if (checkAddCategoryName?.id && isCategoryEditingChange) {
+      updateCategoryMutate({
+        id: checkAddCategoryName.id,
+        name: isCategoryEditingChange,
+      });
+    }
+  };
+  const handleChangeValue = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsCategoryEditingChange(e.target.value);
+  };
+
+  // console.log(checkAddCategoryName);
+
+  // 🔥 mutation
+
+  const { mutate: deleteCategoryMutate, isLoading: deleteCategoryLoading } =
+    useMutation((id: string) => OneMedAdmin.deleteCategory(id), {
+      onSuccess: () => {
+        queryClient.invalidateQueries(["getCategorylist"]);
+        setCheckCategoryName(undefined);
+        setValue("");
+        setDeleteBool(true);
+      },
+      onError: (err) => {
+        console.error("Delete category error:", err);
+      },
+    });
+
+  // 🔥 click handler
+  const handleDeleteCategory = (id: string) => {
+    deleteCategoryMutate(id);
+  };
+
+  // Modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const showModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleOk = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
+  };
+
+  // Queru orqali user profile malumotlarini olish
+  const { data: getUserProfileData } = useQuery<UserProfileResponse>({
+    queryKey: ["getUserProfile"], // category emas, user profile
+    queryFn: () => OneMedAdmin.getUserProfile(),
+    staleTime: Infinity,
+    cacheTime: Infinity,
+    enabled: !!isModalOpen,
+  });
+
+  useEffect(() => {
+    if (getUserProfileData?.data) {
+      form.setFieldsValue({
+        fio: getUserProfileData.data.fio,
+        username: getUserProfileData.data.username,
+        phone: getUserProfileData.data.phone,
+        role: getUserProfileData.data.role,
+        doctor: getUserProfileData.data.doctor
+          ? {
+              experience_year: getUserProfileData.data.doctor.experience_year,
+              patients_stats: getUserProfileData.data.doctor.patients_stats,
+              categories: {
+                name: getUserProfileData.data.doctor.categories?.name,
+                services:
+                  getUserProfileData.data.doctor.categories?.services?.map(
+                    (s) => ({
+                      name: s.name,
+                      price: s.price,
+                    })
+                  ),
+              },
+            }
+          : undefined,
+      });
+    }
+  }, [getUserProfileData, form]);
+
+  const { mutate: updateProfileMutate, isLoading: updateProfileDataLoading } =
+    useMutation<UserProfileResponse, Error, UpdateProfilePayload>(
+      (obj) => OneMedAdmin.updateProfileData(obj),
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries(["updateProfileData"]);
+        },
+        onError: (err) => {
+          console.error("Update profile error:", err);
+        },
+      }
+    );
 
   return (
     <div>
@@ -241,11 +541,112 @@ export default function Settings() {
           </p>
         </div>
 
-        <button className="flex gap-2 items-center py-2 px-4 rounded-md text-white cursor-pointer bg-[#2B7FFF]">
+        <button
+          onClick={showModal}
+          className="flex gap-2 items-center py-2 px-4 rounded-md text-white cursor-pointer bg-[#2B7FFF]"
+        >
           <FiPlus className="text-[20px]" />
           Accountni sozlash
         </button>
       </div>
+
+      <Modal
+        title="Admin profilini sozlash"
+        closable={{ "aria-label": "Custom Close Button" }}
+        open={isModalOpen}
+        onOk={handleOk}
+        onCancel={handleCancel}
+        footer={false}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={(values) => {
+            const payload = {
+              fio: values.fio,
+              username: values.username,
+              role: values.role,
+              phone: values.phone,
+              more: values.more,
+              doctor: values.doctor
+                ? {
+                    experience_year: values.doctor.experience_year,
+                    services: values.doctor.services?.map((s: any) => s.value),
+                  }
+                : undefined,
+            };
+
+            console.log("Yuboriladigan payload:", payload);
+            updateProfileMutate(payload);
+            // mutation yoki API call shu yerda
+          }}
+        >
+          <Form.Item label="FIO" name="fio">
+            <Input />
+          </Form.Item>
+
+          <Form.Item label="Username" name="username">
+            <Input />
+          </Form.Item>
+
+          <Form.Item label="Phone" name="phone">
+            <Input />
+          </Form.Item>
+
+          <Form.Item label="Role" name="role">
+            <Input />
+          </Form.Item>
+
+          <Form.Item label="More" name="more">
+            <Input />
+          </Form.Item>
+
+          {getUserProfileData?.data?.doctor && (
+            <>
+              <Form.Item
+                label="Experience Year"
+                name={["doctor", "experience_year"]}
+              >
+                <Input type="number" />
+              </Form.Item>
+
+              <Form.Item label="Services" name={["doctor", "services"]}>
+                <Select
+                  mode="multiple"
+                  placeholder="Xizmatlarni tanlang"
+                  options={[
+                    {
+                      label: "Service 1",
+                      value: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    },
+                    {
+                      label: "Service 2",
+                      value: "7fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    },
+                  ]}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          <div className="flex justify-end">
+            <Button
+              type="primary"
+              htmlType="submit"
+              className="!h-[38px] !py-2.5 !w-full"
+            >
+              {updateProfileDataLoading ? (
+                <Spin
+                  className="!text-white"
+                  indicator={<LoadingOutlined spin />}
+                />
+              ) : (
+                "Saqlash"
+              )}
+            </Button>
+          </div>
+        </Form>
+      </Modal>
 
       <div className="border md:w-full w-full border-[#e3e3e3] rounded-[10px] px-6 py-4 mb-3 mt-6">
         <div className="flex items-center gap-3">
@@ -270,12 +671,15 @@ export default function Settings() {
                   loading={getCatLoading && page === 1} // faqat birinchi page uchun umumiy spin
                   onPopupScroll={handlePopupScroll}
                   dropdownStyle={{ maxHeight: 300, overflow: "auto" }}
-                  dropdownRender={(menu) => (
+                  popupRender={(menu) => (
                     <>
                       {menu}
                       {isFetching && hasMore && (
                         <div style={{ textAlign: "center", padding: 8 }}>
-                          <Spin size="small" />
+                          <Spin
+                            indicator={<LoadingOutlined spin />}
+                            size="small"
+                          />
                         </div>
                       )}
                     </>
@@ -284,8 +688,12 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="!col-span-8">
-              {checkAddCategoryName ? (
+            <div className="!col-span-8  relative">
+              {getOneCategoryLoading ? (
+                <div className="absolute top-0 left-0 w-full flex justify-center items-center h-full z-[9999]">
+                  <Spin indicator={<LoadingOutlined spin />} />
+                </div>
+              ) : checkAddCategoryName ? (
                 ""
               ) : (
                 <div className=" border rounded-xl border-[#F0F0F0] px-4 py-2">
@@ -314,11 +722,75 @@ export default function Settings() {
                 </div>
               )}
 
-              {checkAddCategoryName ? (
+              {value ? ( // update bogandagi form
                 <div className="border rounded-xl border-[#F0F0F0] px-4 py-2">
-                  <h3 className="font-[500] mb-3 text-[14px] mt-3">
-                    Yangi kategoriya qo'shish
-                  </h3>
+                  <Form
+                    form={form}
+                    layout="inline"
+                    onFinish={(values) => {
+                      if (checkAddCategoryName?.id) {
+                        updateCategoryMutate({
+                          id: checkAddCategoryName.id,
+                          name: values.categoryName,
+                        });
+                      }
+                      console.log(values);
+                    }}
+                    style={{ marginBottom: "20px" }}
+                    className="flex justify-between"
+                  >
+                    <Form.Item name="categoryName">
+                      {!isCategoryEditing ? (
+                        <div>
+                          <h2 className=" font-[500]">
+                            {checkAddCategoryName?.name}
+                          </h2>
+                        </div>
+                      ) : (
+                        <Input
+                          placeholder="Kategoriya nomi"
+                          disabled={!isCategoryEditing}
+                          onChange={handleChangeValue}
+                        />
+                      )}
+                    </Form.Item>
+
+                    <div className="flex gap-3">
+                      {isCategoryEditing ? (
+                        <Button
+                          type="primary"
+                          htmlType="button"
+                          onClick={handleSaveCategory}
+                          loading={updateCategoryLoading}
+                        >
+                          Saqlash
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={handleCategoryEdit}
+                          icon={<BiSolidEditAlt />}
+                        >
+                          Tahrirlash
+                        </Button>
+                      )}
+                      {deleteCategoryLoading ? (
+                        <Spin indicator={<LoadingOutlined spin />} />
+                      ) : (
+                        <Button
+                          danger
+                          type="primary"
+                          icon={<IoTrashOutline />}
+                          onClick={() => {
+                            if (checkAddCategoryName?.id) {
+                              handleDeleteCategory(checkAddCategoryName.id);
+                            }
+                          }}
+                        >
+                          Kategoriyani o‘chirish
+                        </Button>
+                      )}
+                    </div>
+                  </Form>
                   <Form
                     labelCol={{ span: 6 }}
                     wrapperCol={{ span: 18 }}
@@ -326,10 +798,9 @@ export default function Settings() {
                     name="dynamic_form_complex"
                     autoComplete="off"
                     className="!w-full"
-                    onFinish={(value) => addCategoryWithServices(value)}
                   >
                     <Form.List name="items">
-                      {(fields, { add, remove }) => (
+                      {(fields) => (
                         <div
                           style={{
                             display: "flex",
@@ -339,30 +810,23 @@ export default function Settings() {
                           }}
                         >
                           {fields.map((field) => (
-                            <Card
-                              size="small"
-                              title={`${checkAddCategoryName?.name}`}
-                              key={field.key}
-                              extra={
-                                <CloseOutlined
-                                  onClick={() => {
-                                    remove(field.name);
-                                    setCloseCat(false);
-                                  }}
-                                />
-                              }
-                            >
-                              <Form.Item label="Servis">
-                                <Form.List name={[field.name, "list"]}>
-                                  {(subFields, subOpt) => (
-                                    <div
-                                      style={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        rowGap: 16,
-                                      }}
-                                    >
-                                      {subFields.map((subField) => (
+                            <Form.Item key={field.name} label="Servis">
+                              <Form.List name={[field.name, "list"]}>
+                                {(subFields) => (
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      rowGap: 16,
+                                    }}
+                                  >
+                                    {subFields.map((subField) => {
+                                      const isEditing =
+                                        editingIndex === subField.name;
+                                      const isSuccess =
+                                        successIndex === subField.name;
+
+                                      return (
                                         <div
                                           className="!flex justify-between gap-5"
                                           key={subField.key}
@@ -382,60 +846,274 @@ export default function Settings() {
                                               placeholder="Servis narxi"
                                             />
                                           </Form.Item>
-                                          <CloseOutlined
-                                            onClick={() =>
-                                              subOpt.remove(subField.name)
-                                            }
-                                          />
+
+                                          {deletingId ===
+                                          checkAddCategoryName?.services[
+                                            subField.name
+                                          ]?.id ? (
+                                            <Spin
+                                              indicator={
+                                                <LoadingOutlined spin />
+                                              }
+                                            />
+                                          ) : (
+                                            <div className="cursor-pointer text-[24px] flex items-center justify-center h-[35px] text-[#bb203a] !w-[50px]">
+                                              <IoTrashOutline
+                                                onClick={() => {
+                                                  const serviceId =
+                                                    checkAddCategoryName
+                                                      ?.services[subField.name]
+                                                      ?.id;
+                                                  if (serviceId) {
+                                                    handleDelete(serviceId);
+                                                  }
+                                                }}
+                                              />
+                                            </div>
+                                          )}
+
+                                          {isEditing ? (
+                                            <Spin
+                                              indicator={
+                                                <LoadingOutlined spin />
+                                              }
+                                            />
+                                          ) : isSuccess ? (
+                                            <div className="text-[25px] flex items-center justify-center h-[35px] text-[#006a31] !w-[50px]">
+                                              <IoCheckmarkDoneSharp />
+                                            </div>
+                                          ) : (
+                                            <div
+                                              onClick={() => {
+                                                const allItems =
+                                                  form.getFieldValue("items");
+                                                const currentService =
+                                                  allItems?.[field.name]
+                                                    ?.list?.[subField.name];
+                                                if (currentService) {
+                                                  handleEditServise(
+                                                    subField.name,
+                                                    {
+                                                      name: currentService.name,
+                                                      price:
+                                                        currentService.price,
+                                                    }
+                                                  );
+                                                }
+                                              }}
+                                              className="text-[25px] flex items-center justify-center h-[35px] cursor-pointer text-[#2B7FFF] !w-[50px]"
+                                            >
+                                              <BiSolidEditAlt />
+                                            </div>
+                                          )}
                                         </div>
-                                      ))}
-                                      <Button
+                                      );
+                                    })}
+
+                                    {/* <Button
                                         onClick={() => subOpt.add()}
                                         block
                                       >
                                         + Servis qo'shish
-                                      </Button>
-                                    </div>
-                                  )}
-                                </Form.List>
-                              </Form.Item>
-                            </Card>
+                                      </Button> */}
+                                  </div>
+                                )}
+                              </Form.List>
+                            </Form.Item>
+                          ))}
+                        </div>
+                      )}
+                    </Form.List>
+                  </Form>
+
+                  <Form
+                    labelCol={{ span: 6 }}
+                    wrapperCol={{ span: 18 }}
+                    name="new_services_form"
+                    autoComplete="off"
+                    form={categoryForm}
+                    className="!w-full"
+                    onFinish={(values) => {
+                      console.log("Yangi servislar:", values);
+                      addServicesMutate({
+                        category: checkAddCategoryName?.id!,
+                        services: values.newServices, // alohida field
+                      });
+                    }}
+                  >
+                    <Form.List name="newServices">
+                      {(fields, { add, remove }) => (
+                        <div
+                          style={{
+                            display: "flex",
+                            rowGap: 16,
+                            flexDirection: "column",
+                            width: "100%",
+                          }}
+                        >
+                          {fields.map((field) => (
+                            <Form.Item label="Servis">
+                              <div className="!flex justify-between gap-5">
+                                <Form.Item noStyle name={[field.name, "name"]}>
+                                  <Input placeholder="Servis nomi" />
+                                </Form.Item>
+                                <Form.Item noStyle name={[field.name, "price"]}>
+                                  <Input
+                                    type="number"
+                                    placeholder="Servis narxi"
+                                  />
+                                </Form.Item>
+                                <CloseOutlined
+                                  onClick={() => remove(field.name)}
+                                />
+                              </div>
+                            </Form.Item>
                           ))}
 
-                          {checkAddCategoryName && closeCat ? (
-                            <Button
-                              className="!bg-[#4D94FF] hover:!bg-[#2B7FFF] !h-[40px] !text-white"
-                              htmlType="submit"
-                              block
-                            >
-                              {addServicesLoading ? (
-                                <Spin
-                                  className="!text-white"
-                                  indicator={<LoadingOutlined spin />}
-                                />
-                              ) : (
-                                "+ Ma'lumotlarni yuborish"
-                              )}
-                            </Button>
-                          ) : (
-                            <Button
-                              className="!bg-[#4D94FF] hover:!bg-[#2B7FFF] !h-[40px] !text-white"
-                              onClick={() => {
-                                setCloseCat(true);
-                                add();
-                              }}
-                              block
-                            >
-                              + Yangi kategoriya qo'shish
-                            </Button>
-                          )}
+                          <Button onClick={() => add()} block>
+                            + Servis qo‘shish
+                          </Button>
+
+                          <Button
+                            className="!bg-[#4D94FF] hover:!bg-[#2B7FFF] !h-[40px] !text-white"
+                            htmlType="submit"
+                            block
+                          >
+                            + Yangi servislarni yuborish
+                          </Button>
                         </div>
                       )}
                     </Form.List>
                   </Form>
                 </div>
               ) : (
-                ""
+                checkAddCategoryName &&
+                !value &&
+                !deleteBool && (
+                  <div className="border rounded-xl border-[#F0F0F0] px-4 py-2">
+                    <Form
+                      labelCol={{ span: 6 }}
+                      wrapperCol={{ span: 18 }}
+                      form={form}
+                      name="dynamic_form_complex"
+                      autoComplete="off"
+                      className="!w-full"
+                      onFinish={(value) => addCategoryWithServices(value)}
+                    >
+                      <Form.List name="items">
+                        {(fields, { add, remove }) => (
+                          <div
+                            style={{
+                              display: "flex",
+                              rowGap: 16,
+                              flexDirection: "column",
+                              width: "100%",
+                            }}
+                          >
+                            {fields.map((field) => (
+                              <Card
+                                size="small"
+                                title={
+                                  checkAddCategoryName?.name ||
+                                  "Yangi kategoriya"
+                                }
+                                key={field.key}
+                                extra={
+                                  <CloseOutlined
+                                    onClick={() => {
+                                      remove(field.name);
+                                      setCloseCat(false);
+                                    }}
+                                  />
+                                }
+                              >
+                                <Form.Item label="Servis">
+                                  <Form.List name={[field.name, "list"]}>
+                                    {(subFields, subOpt) => (
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          flexDirection: "column",
+                                          rowGap: 16,
+                                        }}
+                                      >
+                                        {subFields.map((subField) => (
+                                          <div
+                                            className="!flex justify-between gap-5"
+                                            key={subField.key}
+                                          >
+                                            <Form.Item
+                                              noStyle
+                                              name={[subField.name, "name"]}
+                                            >
+                                              <Input placeholder="Servis nomi" />
+                                            </Form.Item>
+                                            <Form.Item
+                                              noStyle
+                                              name={[subField.name, "price"]}
+                                            >
+                                              <Input
+                                                type="number"
+                                                placeholder="Servis narxi"
+                                              />
+                                            </Form.Item>
+                                            <CloseOutlined
+                                              onClick={() =>
+                                                subOpt.remove(subField.name)
+                                              }
+                                            />
+                                          </div>
+                                        ))}
+
+                                        <Button
+                                          onClick={() => subOpt.add()}
+                                          block
+                                        >
+                                          + Servis qo'shish
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </Form.List>
+                                </Form.Item>
+                              </Card>
+                            ))}
+
+                            {checkAddCategoryName && closeCat ? (
+                              <Button
+                                className="!bg-[#4D94FF] hover:!bg-[#2B7FFF] !h-[40px] !text-white"
+                                htmlType="submit"
+                                block
+                              >
+                                {addServicesLoading ? (
+                                  <Spin
+                                    className="!text-white"
+                                    indicator={<LoadingOutlined spin />}
+                                  />
+                                ) : (
+                                  "+ Ma'lumotlarni yuborish"
+                                )}
+                              </Button>
+                            ) : !closeCat ? (
+                              <Button
+                                className="!bg-[#4D94FF] hover:!bg-[#2B7FFF] !h-[40px] !text-white"
+                                htmlType="button"
+                                block
+                                onClick={() => {
+                                  setCloseCat(true);
+                                  add();
+                                }}
+                              >
+                                + Kategoriyaga servis qo'shsih
+                              </Button>
+                            ) : (
+                              ""
+                            )}
+                          </div>
+                        )}
+                      </Form.List>
+                    </Form>
+                  </div>
+                )
               )}
             </div>
           </div>

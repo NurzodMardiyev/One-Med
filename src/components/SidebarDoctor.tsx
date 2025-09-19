@@ -15,14 +15,15 @@ export default function SidebarDoctor() {
   const { collapsed, setCollapsed } = useCreateContext();
   const navigate = useNavigate();
   const location = useLocation();
+  console.log(location);
 
   const toggleCollapsed = () => {
     setCollapsed(!collapsed);
   };
 
   const items: MenuItem[] = [
-    { key: "employees", icon: <PiUserListBold />, label: "Bemorlar ro'yhati" },
-    { key: "settings", icon: <IoSettingsOutline />, label: "Sozlamalar " },
+    { key: "patients", icon: <PiUserListBold />, label: "Bemorlar ro'yhati" },
+    { key: "", icon: <IoSettingsOutline />, label: "Sozlamalar " },
   ];
 
   const handleEvent = (e: { key: string }) => {
@@ -53,7 +54,7 @@ export default function SidebarDoctor() {
       </div>
       <Menu
         onClick={handleEvent}
-        defaultSelectedKeys={[location.pathname.slice(1)]}
+        defaultSelectedKeys={[location.pathname.slice(8)]}
         mode="inline"
         inlineCollapsed={collapsed}
         items={items}

@@ -6,7 +6,7 @@ type props = {
     borderColor: string;
     color: string;
     title: string;
-    howmuch: string;
+    howmuch: number;
     icon: ReactNode;
     iconStat?: ReactNode;
     desp: ReactNode;

@@ -9,12 +9,13 @@ import {
   Select,
   Spin,
   TreeSelect,
+  TreeSelectProps,
 } from "antd";
 import { Link } from "react-router-dom";
 import { LuUser } from "react-icons/lu";
 import { BsTelephone } from "react-icons/bs";
 import { FaUserDoctor } from "react-icons/fa6";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { OneMedAdmin } from "../queries/query";
 import { LoadingOutlined } from "@ant-design/icons";
@@ -49,6 +50,7 @@ type ServiceCategory = {
   name: string;
   services: Service[];
 };
+
 export default function Employees() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [page, setPage] = useState(1);
@@ -80,24 +82,53 @@ export default function Employees() {
   });
 
   // Servislarni olish
+
   const [enable, setEnable] = useState(false);
-  const { data: servicesData } = useQuery({
-    queryKey: ["services"],
-    queryFn: () => OneMedAdmin.getServices(1, 10),
+  const [serPage, setSerPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [treeData2, setTreeData2] = useState<any[]>([]);
+
+  const { data: servicesData, isFetching } = useQuery({
+    queryKey: ["services", serPage], // <-- serPage qo‘shildi
+    queryFn: () => OneMedAdmin.getServices(serPage, 10),
     enabled: enable,
+    keepPreviousData: true, // eski data yo‘qolmasin
     staleTime: Infinity,
     cacheTime: Infinity,
   });
 
-  const treeData2 = servicesData?.data.map((category: ServiceCategory) => ({
-    value: category.id,
-    title: category.name,
-    selectable: false,
-    children: category.services.map((srv) => ({
-      value: srv.id,
-      title: <div>{srv.name}</div>,
-    })),
-  }));
+  const handlePopupScroll: TreeSelectProps["onPopupScroll"] = (e) => {
+    const target = e.target as HTMLDivElement;
+
+    if (
+      hasMore &&
+      !isFetching &&
+      target.scrollTop + target.offsetHeight >= target.scrollHeight - 5
+    ) {
+      setSerPage((prev) => prev + 1);
+    }
+  };
+
+  useEffect(() => {
+    if (servicesData?.data?.length) {
+      setTreeData2((prev) => [
+        ...prev,
+        ...servicesData.data.map((category: ServiceCategory) => ({
+          value: category.id,
+          title: category.name,
+          selectable: false,
+          children: category.services.map((srv) => ({
+            value: srv.id,
+            title: <div>{srv.name}</div>,
+          })),
+        })),
+      ]);
+
+      if (servicesData.data.length < 10) {
+        setHasMore(false); // end of list
+      }
+    }
+  }, [servicesData]);
 
   const takeServicesFromBack = () => setEnable(true);
 
@@ -276,10 +307,24 @@ export default function Employees() {
                   placeholder="Please select"
                   allowClear
                   treeCheckable
+                  onPopupScroll={handlePopupScroll}
                   treeDefaultExpandAll
                   showCheckedStrategy={TreeSelect.SHOW_CHILD}
                   onChange={(v) => console.log(v)}
                   treeData={treeData2}
+                  dropdownRender={(menu) => (
+                    <>
+                      {menu}
+                      {isFetching && hasMore && (
+                        <div style={{ textAlign: "center", padding: 8 }}>
+                          <Spin
+                            indicator={<LoadingOutlined spin />}
+                            size="small"
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
                 />
               </Form.Item>
             )}

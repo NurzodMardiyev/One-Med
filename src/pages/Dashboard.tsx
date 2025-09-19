@@ -2,13 +2,14 @@ import { LuUsers } from "react-icons/lu";
 import DashboardCard from "../components/DashboardCard";
 import { IoMdTrendingUp } from "react-icons/io";
 import { MdOutlineDateRange } from "react-icons/md";
-import { Modal } from "antd";
-import { useState } from "react";
+import { Modal, Spin } from "antd";
+import { useEffect, useState } from "react";
 import DashboardCharts from "../components/DashboardCharts";
 import { FaDollarSign } from "react-icons/fa6";
 import { VscGraphLine } from "react-icons/vsc";
 import { BiUserCheck } from "react-icons/bi";
 import { IoReload } from "react-icons/io5";
+import { LoadingOutlined } from "@ant-design/icons";
 import {
   PieChart,
   Pie,
@@ -17,6 +18,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { useQuery } from "react-query";
+import { OneMedAdmin } from "../queries/query";
 
 export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,10 +33,23 @@ export default function Dashboard() {
     setIsModalOpen(false);
   };
 
+  // Query orqali Statistikani ovolis umumiy
+  const { data: allStatData, isLoading: allStatLoading } = useQuery({
+    queryFn: () => OneMedAdmin.allStat(),
+    queryKey: ["allStat"],
+    staleTime: Infinity,
+    cacheTime: Infinity,
+  });
+
+  console.log(allStatData);
   const takeStatGraphic = (value: number | string) => {
-    console.log(value);
     setStatValueId(value);
-    showModal();
+    if (value === 4) {
+      console.log(value);
+    } else {
+      showModal();
+      console.log(value);
+    }
   };
 
   const patients = {
@@ -41,7 +57,7 @@ export default function Dashboard() {
     borderColor: "border-s-[#2B7FFF]",
     color: "#2B7FFF",
     title: "Jami bemorlar",
-    howmuch: "1234",
+    howmuch: Number(allStatData?.data?.patients_stats.total_patients),
     icon: (
       <div className="text-[#2B7FFF]">
         <LuUsers />
@@ -55,7 +71,12 @@ export default function Dashboard() {
     ),
     desp: (
       <p className="flex items-center font-[300] gap-2 text-[12px] text-[#ababab] mt-[-4px]">
-        <LuUsers /> O'tgan oyga nisbatan +12%
+        <LuUsers /> O'tgan oyga nisbatan{" "}
+        {allStatData?.data?.patients_stats?.change_from_last_month?.percentage
+          ? allStatData?.data?.patients_stats?.change_from_last_month
+              ?.percentage + "%"
+          : allStatData?.data?.patients_stats?.change_from_last_month?.amount +
+            " ta"}
       </p>
     ),
     onClickBtn: takeStatGraphic,
@@ -66,7 +87,7 @@ export default function Dashboard() {
     borderColor: "border-s-[#F9C424]",
     color: "#F9C424",
     title: "Bugungi qabullar",
-    howmuch: "24",
+    howmuch: Number(allStatData?.data?.visits_stats?.total_visits),
     icon: (
       <div className="text-[#F9C424]">
         <MdOutlineDateRange />
@@ -80,7 +101,8 @@ export default function Dashboard() {
     ),
     desp: (
       <p className="flex items-center font-[300] gap-2 text-[12px] text-[#ababab] mt-[-4px]">
-        <LuUsers /> 6 ta kutilayotgan tekshiruv
+        <LuUsers /> {allStatData?.data?.visits_stats?.pending_visits} ta
+        kutilayotgan tekshiruv
       </p>
     ),
     onClickBtn: takeStatGraphic,
@@ -91,7 +113,7 @@ export default function Dashboard() {
     borderColor: "border-s-[#F04242]",
     color: "#F04242",
     title: "Oylik daromad",
-    howmuch: "3400000 so'm",
+    howmuch: Number(allStatData?.data?.visits_stats?.monthly_revenue),
     icon: (
       <div className="text-[##F04242]">
         <FaDollarSign />
@@ -104,7 +126,12 @@ export default function Dashboard() {
     ),
     desp: (
       <p className="flex items-center font-[300] gap-2 text-[12px] text-[#ababab] mt-[-4px]">
-        <IoMdTrendingUp /> +8% O'tgan oyga nisbatan +12%
+        <IoMdTrendingUp /> O'tgan oyga nisbatan{" "}
+        {allStatData?.data?.visits_stats?.change_from_last_month?.percentage
+          ? allStatData?.data?.visits_stats?.change_from_last_month
+              ?.percentage + "%"
+          : allStatData?.data?.visits_stats?.change_from_last_month?.amount +
+            " so'm"}
       </p>
     ),
     onClickBtn: takeStatGraphic,
@@ -115,7 +142,7 @@ export default function Dashboard() {
     borderColor: "border-s-[#E9FBF4]",
     color: "#E9FBF4",
     title: "Xodimlar soni",
-    howmuch: "18",
+    howmuch: Number(allStatData?.data?.staff_stats?.total),
     icon: (
       <div className="!text-[##F04242]">
         <VscGraphLine />
@@ -123,18 +150,55 @@ export default function Dashboard() {
     ),
     desp: (
       <p className="flex items-center font-[300] gap-2 text-[12px] text-[#ababab] mt-[-4px]">
-        <LuUsers /> 12 shifokor, 6 hamshira
+        <LuUsers /> {allStatData?.data?.staff_stats?.doctor_count} shifokor,{" "}
+        {allStatData?.data?.staff_stats?.admin_count} admin,{" "}
+        {allStatData?.data?.staff_stats?.registrator_count} registrator
       </p>
     ),
     onClickBtn: takeStatGraphic,
   };
 
   const dataPieChart = [
-    { name: "Yangi bemorlar", value: 400 },
-    { name: "Qaytgan bemorlar", value: 300 },
+    {
+      name: "Yangi bemorlar",
+      value: allStatData?.data?.patients_stats?.new_patients,
+    },
+    {
+      name: "Qaytgan bemorlar",
+      value: allStatData?.data?.patients_stats?.returned_patients,
+    },
   ];
 
   const COLORS = ["#0088FE", "#00C49F"];
+
+  const [newPatient, setNewPatient] = useState(0);
+  const [returnedPatient, setReturnedPatient] = useState(0);
+  useEffect(() => {
+    if (!allStatData?.data?.patients_stats) return;
+
+    const new_patient_per =
+      (allStatData.data.patients_stats.new_patients /
+        (allStatData.data.patients_stats.new_patients +
+          allStatData.data.patients_stats.returned_patients)) *
+      100;
+
+    const returned_patient_per =
+      (allStatData.data.patients_stats.returned_patients /
+        (allStatData.data.patients_stats.new_patients +
+          allStatData.data.patients_stats.returned_patients)) *
+      100;
+
+    setNewPatient(new_patient_per);
+    setReturnedPatient(returned_patient_per);
+  }, [allStatData]);
+
+  if (allStatLoading) {
+    return (
+      <div className="absolute top-0 left-0 w-full h-screen flex items-center justify-center bg-white z-[9999]">
+        <Spin indicator={<LoadingOutlined spin />} size="large" />
+      </div>
+    );
+  }
 
   return (
     <div className="py-4">
@@ -194,46 +258,31 @@ export default function Dashboard() {
               <IoMdTrendingUp />
             </button>
           </div>
-          <div className="mt-[20px] flex flex-col gap-3">
-            <div className="bg-[#AA5EEF]/10 px-4 py-4 rounded-[10px] flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="w-[45px] h-[45px] rounded-full flex items-center justify-center text-[#AA5EEF] bg-[#AA5EEF]/20 text-[26px]">
-                  <BiUserCheck />
+          {allStatData?.data?.doctors_stats.map((item) => (
+            <div key={item.id} className="mt-[20px] flex flex-col gap-3">
+              <div className="bg-[#AA5EEF]/10 px-4 py-4 rounded-[10px] flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-[45px] h-[45px] rounded-full flex items-center justify-center text-[#AA5EEF] bg-[#AA5EEF]/20 text-[26px]">
+                    <BiUserCheck />
+                  </div>
+                  <div>
+                    <h3 className="text-[16px] font-[500]">{item.fio}</h3>
+                    <p className="text-[14px] text-[#a2a2a2] font-[300]">
+                      Doctor
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-[16px] font-[500]">Dr. Ahmadov Akmal</h3>
-                  <p className="text-[14px] text-[#a2a2a2] font-[300]">
-                    Kardiolog
-                  </p>
+                <div className="flex flex-col">
+                  <span className="text-[24px] mb-[-6px] font-[700]">
+                    {item.patient_count}
+                  </span>
+                  <span className="text-[14px] text-[#a2a2a2] font-[300]">
+                    bemor
+                  </span>
                 </div>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[24px] mb-[-6px] font-[700]">12</span>
-                <span className="text-[14px] text-[#a2a2a2] font-[300]">
-                  bemor
-                </span>
               </div>
             </div>
-            <div className="bg-[#AA5EEF]/10 px-4 py-4 rounded-[10px] flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="w-[45px] h-[45px] rounded-full flex items-center justify-center text-[#AA5EEF] bg-[#AA5EEF]/20 text-[26px]">
-                  <BiUserCheck />
-                </div>
-                <div>
-                  <h3 className="text-[16px] font-[500]">Dr. Ahmadov Akmal</h3>
-                  <p className="text-[14px] text-[#a2a2a2] font-[300]">
-                    Kardiolog
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[24px] mb-[-6px] font-[700]">12</span>
-                <span className="text-[14px] text-[#a2a2a2] font-[300]">
-                  bemor
-                </span>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
         <div className="col-span-6 border border-[#c8c8c8] rounded-md px-6 py-4">
           <div className="flex justify-between items-center">
@@ -280,18 +329,22 @@ export default function Dashboard() {
               <p className="text-[#8F99A3] text-[14px] font-[300]">
                 Yangi bemorlar
               </p>
-              <span className="text-[24px] font-[700] text-[#1173D4]">256</span>
+              <span className="text-[24px] font-[700] text-[#1173D4]">
+                {allStatData?.data?.patients_stats?.new_patients}
+              </span>
               <p className="text-[#8F99A3] text-[14px] font-[300]">
-                20.7% nisbati
+                {newPatient}% nisbati
               </p>
             </div>
             <div className="col-span-3 flex flex-col gap-1 py-[10px] rounded-md border border-[#C9F2E1] bg-[#F3FCF8] justify-center items-center">
               <p className="text-[#8F99A3] text-[14px] font-[300]">
-                Yangi bemorlar
+                Qaytgan bemorlar
               </p>
-              <span className="text-[24px] font-[700] text-[#1DC981]">256</span>
+              <span className="text-[24px] font-[700] text-[#1DC981]">
+                {allStatData?.data?.patients_stats?.returned_patients}
+              </span>
               <p className="text-[#8F99A3] text-[14px] font-[300]">
-                20.7% nisbati
+                {returnedPatient}% nisbati
               </p>
             </div>
           </div>

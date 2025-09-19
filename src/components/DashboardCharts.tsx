@@ -10,70 +10,54 @@ import {
   Bar,
 } from "recharts";
 import "../App.css";
+import { useQuery } from "react-query";
+import { OneMedAdmin } from "../queries/query";
+import { Spin } from "antd";
 
 type Props = {
   chartId: number | string;
 };
-const dataLine = [
-  { name: "Yanvavr", soni: 400 },
-  { name: "Febral", soni: 200 },
-  { name: "Mart", soni: 400 },
-  { name: "Aprel", soni: 300 },
-  { name: "May", soni: 300 },
-  { name: "Iyun", soni: 300 },
-  { name: "Iyul", soni: 500 },
-  { name: "Avgust", soni: 300 },
-  { name: "Sentabr", soni: 300 },
-  { name: "Octabr", soni: 200 },
-  { name: "Noyabr", soni: 100 },
-  { name: "Dekabr", soni: 300 },
-];
-const dataBar = [
-  { name: "1-kun", soni: 120 },
-  { name: "2-kun", soni: 340 },
-  { name: "3-kun", soni: 210 },
-  { name: "4-kun", soni: 480 },
-  { name: "5-kun", soni: 300 },
-  { name: "6-kun", soni: 150 },
-  { name: "7-kun", soni: 420 },
-  { name: "8-kun", soni: 260 },
-  { name: "9-kun", soni: 390 },
-  { name: "10-kun", soni: 500 },
-  { name: "11-kun", soni: 180 },
-  { name: "12-kun", soni: 320 },
-  { name: "13-kun", soni: 450 },
-  { name: "14-kun", soni: 270 },
-  { name: "15-kun", soni: 350 },
-  { name: "16-kun", soni: 410 },
-  { name: "17-kun", soni: 220 },
-  { name: "18-kun", soni: 360 },
-  { name: "19-kun", soni: 490 },
-  { name: "20-kun", soni: 310 },
-  { name: "21-kun", soni: 240 },
-  { name: "22-kun", soni: 420 },
-  { name: "23-kun", soni: 330 },
-  { name: "24-kun", soni: 510 },
-  { name: "25-kun", soni: 290 },
-  { name: "26-kun", soni: 370 },
-  { name: "27-kun", soni: 430 },
-  { name: "28-kun", soni: 200 },
-  { name: "29-kun", soni: 340 },
-  { name: "30-kun", soni: 460 },
-];
 
-const dataTringle = [
-  { name: "Yanvar", soni: 120 },
-  { name: "Fevral", soni: 340 },
-  { name: "Mart", soni: 210 },
-  { name: "Aprel", soni: 480 },
-  { name: "May", soni: 300 },
-  { name: "Iyun", soni: 150 },
-  { name: "Iyul", soni: 420 },
-  { name: "Avgust", soni: 260 },
+const monthNames = [
+  "Yanvar",
+  "Fevral",
+  "Mart",
+  "Aprel",
+  "May",
+  "Iyun",
+  "Iyul",
+  "Avgust",
+  "Sentabr",
+  "Oktabr",
+  "Noyabr",
+  "Dekabr",
 ];
 
 export default function DashboardCharts({ chartId }: Props) {
   if (chartId === 1) {
+    const { data: lineChartData, isLoading: lineChartLoading } = useQuery({
+      queryFn: () => OneMedAdmin.lineChartData(),
+      queryKey: ["lineChartData"],
+      cacheTime: Infinity,
+      staleTime: Infinity,
+    });
+
+    const dataLine =
+      lineChartData?.data?.map(
+        (item: { month: number; patient_count: number }) => ({
+          name: monthNames[item.month - 1], // month 1-based
+          soni: item.patient_count,
+        })
+      ) ?? [];
+
+    if (lineChartLoading) {
+      return (
+        <div className="w-full h-[400px] flex items-center justify-center">
+          <Spin />
+        </div>
+      );
+    }
+
     return (
       <div>
         <h2 className="text-[20px] font-[500] mb-4">
@@ -107,6 +91,30 @@ export default function DashboardCharts({ chartId }: Props) {
   }
 
   if (chartId === 2) {
+    const { data: barChartData, isLoading: barChartLoading } = useQuery({
+      queryFn: () => OneMedAdmin.barChartData(),
+      queryKey: ["barChartData"],
+      cacheTime: Infinity,
+      staleTime: Infinity,
+    });
+
+    const dataBar =
+      barChartData?.data.map((item: { date: string; visit_count: number }) => {
+        const day = new Date(item.date).getDate(); // '2025-09-01' → 1
+        return {
+          name: `${day}-kun`,
+          soni: item.visit_count,
+        };
+      }) ?? [];
+
+    if (barChartLoading) {
+      return (
+        <div className="w-full h-[400px] flex items-center justify-center">
+          <Spin />
+        </div>
+      );
+    }
+
     return (
       <div>
         <h2 className="text-[20px] font-[500] mb-4">Oylik qabullar</h2>
@@ -137,6 +145,28 @@ export default function DashboardCharts({ chartId }: Props) {
     return <path d={getPath(x, y, width, height)} stroke="none" fill={fill} />;
   };
   if (chartId === 3) {
+    const { data: triangleBarData, isLoading: triangleBarloading } = useQuery({
+      queryFn: () => OneMedAdmin.tringleData(),
+      queryKey: ["tringleData"],
+      cacheTime: Infinity,
+      staleTime: Infinity,
+    });
+
+    const dataTringle =
+      triangleBarData?.data.map(
+        (item: { month: number; monthly_revenue: number }) => ({
+          name: monthNames[item.month - 1], // 1 → Yanvar
+          soni: item.monthly_revenue,
+        })
+      ) ?? [];
+
+    if (triangleBarloading) {
+      return (
+        <div className="w-full h-[400px] flex items-center justify-center">
+          <Spin />
+        </div>
+      );
+    }
     return (
       <div>
         <h2 className="text-[20px] font-[500] mb-4">Oylik qabullar</h2>

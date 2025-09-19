@@ -1,6 +1,6 @@
 // ========================= IMPORTS =========================
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import {
   Empty,
@@ -16,7 +16,7 @@ import { LoadingOutlined } from "@ant-design/icons";
 
 // ===== Icons =====
 import { IoMdArrowBack } from "react-icons/io";
-import { BiSolidEditAlt } from "react-icons/bi";
+// import { BiSolidEditAlt } from "react-icons/bi";
 import { RiUser3Line } from "react-icons/ri";
 import { LuUser, LuHeart } from "react-icons/lu";
 import { BsCalendar4, BsTelephone } from "react-icons/bs";
@@ -88,6 +88,7 @@ type Visit = {
   services: Service[];
   total_price: number;
   diagnosis: string | null;
+  created_at: string;
   status: "pending" | "completed" | "cancelled" | string;
 };
 
@@ -272,6 +273,8 @@ export default function PatientsInfo() {
       }))
     : [];
 
+  const location = useLocation();
+
   // ========================= LOADING / ERROR =========================
   if (isLoading) {
     return (
@@ -297,7 +300,13 @@ export default function PatientsInfo() {
         {/* Orqaga qaytish */}
         <div className="flex items-center gap-4">
           <Link
-            to="/patients"
+            to={`${
+              location.pathname.slice(1, 7) === "doctor"
+                ? "/doctor/patients"
+                : location.pathname.slice(1, 7) === "regist"
+                ? "/register/patients"
+                : "/patients"
+            }`}
             className="flex items-center gap-1 px-6 py-2.5 text-[14px] font-[500] rounded-md hover:bg-[#E6F4FF]"
           >
             <IoMdArrowBack className="text-[16px]" />
@@ -323,10 +332,10 @@ export default function PatientsInfo() {
 
         {/* Edit tugmasi */}
         <div>
-          <button className="cursor-pointer px-6 py-2.5 bg-[#4d94ff] text-[#fff] rounded-md text-[14px] flex gap-2 hover:bg-[#2B7FFF] transition-all duration-150">
+          {/* <button className="cursor-pointer px-6 py-2.5 bg-[#4d94ff] text-[#fff] rounded-md text-[14px] flex gap-2 hover:bg-[#2B7FFF] transition-all duration-150">
             <BiSolidEditAlt className="text-[18px]" />
             Tahrirlash
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -474,7 +483,7 @@ export default function PatientsInfo() {
                           {item.doctor}
                         </h4>
                         <span className="text-[14px] text-[#676767]">
-                          2024-12-15
+                          {item.created_at.slice(0, 10)}
                         </span>
                       </div>
 
@@ -497,15 +506,15 @@ export default function PatientsInfo() {
                         </li>
                         <li className="flex items-center text-[14px] gap-2 text-[#676767]">
                           <span className="font-[400] text-[#000]">
-                            Davolash:
+                            Tashhis:
                           </span>
-                          {item.services?.map((r) => r.name).join(", ")}
+                          {item.diagnosis}
                         </li>
                         <li className="flex items-center text-[14px] gap-2 text-[#676767]">
                           <span className="font-[400] text-[#000]">
                             To'lov:
                           </span>
-                          {item.services?.map((r) => r.price).join(", ")} so'm
+                          {item.total_price} so'm
                         </li>
                       </ul>
                     </div>

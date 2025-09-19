@@ -87,7 +87,40 @@ function App() {
               <RegisterLayout />
             </PriviteRote>
           }
-        ></Route>
+        >
+          <Route
+            path="registration"
+            element={
+              <PriviteRote>
+                <Registration />
+              </PriviteRote>
+            }
+          />
+          <Route
+            path="patients"
+            element={
+              <PriviteRote>
+                <Patients />
+              </PriviteRote>
+            }
+          />
+          <Route
+            path="patients/:id"
+            element={
+              <PriviteRote>
+                <PatientsInfo />
+              </PriviteRote>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <PriviteRote>
+                <Settings />
+              </PriviteRote>
+            }
+          />
+        </Route>
         <Route
           path="doctor"
           element={
@@ -95,7 +128,24 @@ function App() {
               <DoctorLayout />
             </PriviteRote>
           }
-        ></Route>
+        >
+          <Route
+            path="patients"
+            element={
+              <PriviteRote>
+                <Patients />
+              </PriviteRote>
+            }
+          />
+          <Route
+            path="patients/:id"
+            element={
+              <PriviteRote>
+                <PatientsInfo />
+              </PriviteRote>
+            }
+          />
+        </Route>
       </Routes>
     </div>
   );

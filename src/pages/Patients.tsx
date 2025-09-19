@@ -84,24 +84,49 @@ export default function Patients() {
           </Form.Item>
         </Form>
         <div className="flex items-center gap-2">
-          <button
+          {/* <button
             onClick={() => setStatus("")}
-            className="px-3 py-2 border border-[#eaeaea] rounded-[6px] bg-[#2D80FF] text-white cursor-pointer text-[14px] md:h-[41px] flex items-center justify-center"
+            className={`px-3 py-2 border border-[#eaeaea] rounded-[6px] ${
+              status === "" ? "bg-[#2D80FF] text-white" : "text-black"
+            } cursor-pointer text-[14px] md:h-[41px] flex items-center justify-center`}
           >
             Barchasi
           </button>
           <button
             onClick={() => setStatus("active")}
-            className="px-3 py-2 border border-[#eaeaea] rounded-[6px]  text-black cursor-pointer text-[14px] md:h-[41px] flex items-center justify-center"
+            className={`px-3 py-2 border border-[#eaeaea] rounded-[6px]  ${
+              status === "active" ? "bg-[#2D80FF] text-white" : "text-black"
+            }  cursor-pointer text-[14px] md:h-[41px] flex items-center justify-center`}
           >
             Faol
           </button>
           <button
             onClick={() => setStatus("nonactive")}
-            className="px-3 py-2 border border-[#eaeaea] rounded-[6px]  text-black cursor-pointer text-[14px] md:h-[41px] flex items-center justify-center"
+            className={`px-3 py-2 border border-[#eaeaea] rounded-[6px] ${
+              status === "nonactive" ? "bg-[#2D80FF] text-white" : "text-black"
+            } cursor-pointer text-[14px] md:h-[41px] flex items-center justify-center`}
           >
             Nofaol
-          </button>
+          </button> */}
+          <div className="flex items-center gap-2">
+            {["", "active", "nonactive"].map((r) => (
+              <button
+                key={r}
+                onClick={() => setStatus(r)}
+                className={`px-3 py-2 border border-[#eaeaea] rounded-[6px] ${
+                  status === r ? "bg-[#2D80FF] text-white" : "text-black"
+                } cursor-pointer text-[14px] md:h-[41px]`}
+              >
+                {r === ""
+                  ? "Barchasi"
+                  : r === "active"
+                  ? "Faol"
+                  : r === "nonactive"
+                  ? "Nofaol"
+                  : ""}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

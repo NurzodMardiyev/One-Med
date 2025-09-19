@@ -2,7 +2,8 @@ import axios from "axios";
 import SecureStorage from "react-secure-storage";
 import api from "../components/api";
 import { Dayjs } from "dayjs";
-import { EmployeeResponse } from "../components/EmployeeInfo";
+import { EmployeeData, EmployeeResponse } from "../components/EmployeeInfo";
+import { UpdateProfilePayload, UserProfileResponse } from "../pages/Settings";
 
 const baseApi = "https://api.babyortomed.one-med.uz";
 
@@ -158,6 +159,7 @@ type Visit = {
   doctor: string;
   services: Service[];
   total_price: number;
+  created_at: string;
   diagnosis: string | null;
   status: "pending" | "completed" | "cancelled" | string; // agar status doim faqat shu 3 bo'lsa union yozamiz, boshqa bo'lishi mumkin bo'lsa string qoldiramiz
 };
@@ -245,6 +247,68 @@ type CreateCategoryServiceRequest = {
 };
 
 
+// API response tipi
+export interface GetOneCategoryResponse {
+  success: boolean;
+  data: Category;
+}
+
+export interface UpdateEmployeePayload {
+  fio?: string;
+  username?: string;
+  phone?: string;
+  role?: string;
+  more?: string;
+  doctor?: {
+    experience_year?: number;
+    services?: string[]; // services id lari array
+  };
+}
+
+type Staf_status = {
+  total: number,
+  admin_count: number,
+  registrator_count: number,
+  doctor_count: number
+}
+
+type Doctors_stats = {
+  id: string,
+  fio: string,
+  patient_count: number
+}
+type Patients_stats = {
+  change_from_last_month: Change_from_last_month
+  new_patients: number,
+  patient_coun_of_curr_month: number,
+  returned_patients: number,
+  total_patients: number,
+}
+type Change_from_last_month = {
+  amount: number,
+  percentage: number | null
+}
+
+type Visits_stats ={ 
+  change_from_last_month: Change_from_last_month
+  monthly_revenue: number,
+  pending_visits: number,
+  today_visits: number,
+  total_visits: number
+}
+
+type Data = {
+  staff_stats: Staf_status,
+    doctors_stats: Doctors_stats[],
+    patients_stats: Patients_stats,
+    visits_stats: Visits_stats
+  }
+
+export type Statistic = {
+  success: boolean,
+  data: Data
+}
+
 export const OneMedAdmin = {
   authLogin: async (obj:{phone: string, password: string}) => {
     const response = await axios.post(`${baseApi}/v1/auth/login`, obj, {
@@ -254,10 +318,11 @@ export const OneMedAdmin = {
       },
   })
 
-  const { access_token, refresh_token } = response.data.data;
+  const { access_token, refresh_token, fio } = response.data.data;
     console.log("accessToken", response.data.data.access_token);
     SecureStorage.setItem("accessToken", access_token);
     SecureStorage.setItem("refreshToken", refresh_token);
+    localStorage.setItem("fio", fio )
     console.log(response.data);
     return response.data;
 
@@ -436,5 +501,130 @@ getEmployee: async (id: string): Promise<EmployeeResponse> => {
   });
   return response.data;
 },
+
+getOneCategory: async (id: string): Promise<any> => {
+  const response = await api.get(`${baseApi}/v1/service-categories/${id}`, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+},
+
+editCategory: async (
+  id: string,
+  obj: { name: string}
+): Promise<Category> => {
+  const response = await api.patch(`${baseApi}/v1/service-categories/${id}`, obj, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+},
+
+editService: async (
+  id: string,
+  obj: { name: string; category: string; price: number }
+): Promise<{ id: string; name: string; category: string; price: number }> => {
+  const response = await api.patch(`${baseApi}/v1/services/${id}`, obj, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+},
+
+deleteService: async (id: string): Promise<{ message?: string }> => {
+  const response = await api.delete(`${baseApi}/v1/services/${id}`);
+  return response.data || { message: "Deleted successfully" };
+},
+updateCategory: async (
+  id: string,
+  obj: { name: string }
+): Promise<{ id: string; name: string }> => {
+  const response = await api.patch(`${baseApi}/v1/service-categories/${id}`, obj, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+},
+
+ deleteCategory: async (id: string): Promise<{ message: string }> => {
+    const response = await api.delete(`${baseApi}/v1/service-categories/${id}`);
+    return response.data || { message: "Deleted successfully" };
+  },
+
+
+  
+ getUserProfile:  async (): Promise<any> => {
+  const response = await api.get(`${baseApi}/v1/user/profile`, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+},
+
+updateProfileData: async (
+  obj: UpdateProfilePayload
+): Promise<UserProfileResponse> => {
+  const response = await api.patch(`${baseApi}/v1/user/profile`, obj, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+},
+
+updateEmployee: async (
+  id: string,
+  obj: UpdateEmployeePayload
+): Promise<EmployeeData> => {
+  const response = await api.patch(`${baseApi}/v1/users/${id}`, obj, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+},
+
+
+// Statistika
+allStat: async (): Promise<Statistic> => {
+  const response = await api.get(`${baseApi}/v1/stats/clinc`, {
+ headers: {
+      "Content-Type": "application/json",
+    },
+  })
+  return response.data
+},
+
+lineChartData: async ()=> {
+  const response = await api.get(`${baseApi}/v1/stats/patients/yearly`, {
+    headers: {
+      "Content-Type": "application/json"
+    }
+  })
+  return response.data
+},
+barChartData: async ()=> {
+  const response = await api.get(`${baseApi}/v1/stats/visits/monthly`, {
+    headers: {
+      "Content-Type": "application/json"
+    }
+  })
+  return response.data
+},
+
+tringleData: async ()=> {
+  const response = await api.get(`${baseApi}/v1/stats/revenue/yearly`, {
+    headers: {
+      "Content-Type": "application/json"
+    }
+  })
+  return response.data
+}
 
 }

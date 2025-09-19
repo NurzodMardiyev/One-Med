@@ -1,7 +1,7 @@
 import { BiSolidEditAlt } from "react-icons/bi";
 import { IoMdArrowBack } from "react-icons/io";
 import { Link, useParams } from "react-router-dom";
-import { IoTrashOutline } from "react-icons/io5";
+// import { IoTrashOutline } from "react-icons/io5";
 import { FaStethoscope } from "react-icons/fa6";
 import { PiMedalLight } from "react-icons/pi";
 import { LuUser } from "react-icons/lu";
@@ -15,8 +15,20 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { useQuery } from "react-query";
-import { OneMedAdmin } from "../queries/query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
+import { OneMedAdmin, UpdateEmployeePayload } from "../queries/query";
+import {
+  Button,
+  Input,
+  Modal,
+  Form,
+  Spin,
+  TreeSelect,
+  TreeSelectProps,
+  notification,
+} from "antd";
+import { useEffect, useState } from "react";
+import { LoadingOutlined } from "@ant-design/icons";
 
 export interface Service {
   id: string;
@@ -66,9 +78,27 @@ export interface EmployeeResponse {
   data: EmployeeData;
 }
 
+type NotificationType = "success" | "info" | "warning" | "error";
+
 export default function EmployeeInfo() {
   // URL'dan bemor ID sini olish
+  const [form] = Form.useForm();
   const { id } = useParams<{ id: string }>();
+  const [enable, setEnable] = useState(false);
+  const [serPage, setSerPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [treeData2, setTreeData2] = useState<any[]>([]);
+  const [treeSelectValues, setTreeSelectValues] = useState<string[]>([]);
+
+  const [api, contextHolder] = notification.useNotification();
+
+  const openNotificationWithIcon = (type: NotificationType) => {
+    api[type]({
+      message: "Xatolik yuz berdi",
+      description:
+        "Siz kategoriya tanlagan bo'lishingiz mumkin, Servis tanlang! .",
+    });
+  };
 
   // 1. xodim ma’lumotlari
   const { data: employeeData } = useQuery<EmployeeResponse, Error>({
@@ -79,13 +109,13 @@ export default function EmployeeInfo() {
   });
 
   const chartData =
-    employeeData?.data.doctor.patients_stats.daily_stats.map((stat) => ({
+    employeeData?.data?.doctor?.patients_stats?.daily_stats.map((stat) => ({
       date: stat.date, // X o‘qi uchun date qoldiramiz
       patients: stat.patient_count, // Bemorlari
     })) || [];
 
   const chartData2 =
-    employeeData?.data.doctor.patients_stats.daily_stats.map((stat) => ({
+    employeeData?.data?.doctor?.patients_stats?.daily_stats.map((stat) => ({
       date: stat.date,
       revenue: stat.revenue, // pul
     })) || [];
@@ -100,12 +130,124 @@ export default function EmployeeInfo() {
     return value.toString(); // kichkina sonlar oddiy
   };
 
-  console.log(employeeData?.data);
+  // console.log(employeeData?.data);
+
+  const serviceIds = Array.from(
+    new Set(
+      employeeData?.data?.doctor?.categories.flatMap((c) =>
+        c.services.map((s) => s.id)
+      )
+    )
+  );
+  // Modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const showModal = () => {
+    setIsModalOpen(true);
+    setEnable(true);
+    setTreeSelectValues(serviceIds);
+  };
+
+  const handleOk = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
+  };
+
+  const queryClient = useQueryClient();
+  const { mutate: updateEmployeeMutate, isLoading: updateEmployeeLoading } =
+    useMutation<
+      EmployeeData,
+      Error,
+      { id: string; data: UpdateEmployeePayload }
+    >(({ id, data }) => OneMedAdmin.updateEmployee(id, data), {
+      onSuccess: () => {
+        queryClient.invalidateQueries(["employee", id]);
+        setIsModalOpen(false);
+      },
+      onError: (err) => {
+        console.error("Update employee error:", err);
+        openNotificationWithIcon("error");
+      },
+    });
+
+  useEffect(() => {
+    if (employeeData?.data) {
+      // const data: EmployeeProfile = employeeData.data;
+
+      form.setFieldsValue({
+        fio: employeeData.data.fio,
+        username: employeeData.data.username,
+        phone: employeeData.data.phone,
+        role: employeeData.data.role,
+        more: employeeData.data.more,
+        doctor: employeeData.data.doctor
+          ? {
+              experience_year: employeeData.data.doctor.experience_year,
+              services: employeeData.data.doctor.categories.flatMap((c) =>
+                c.services.map((s) => s.id)
+              ), // faqat id lar
+            }
+          : undefined,
+      });
+    }
+  }, [employeeData, form]);
+
+  // Servislarni olish
+
+  const { data: servicesData, isFetching } = useQuery({
+    queryKey: ["services", serPage], // <-- serPage qo‘shildi
+    queryFn: () => OneMedAdmin.getServices(serPage, 10),
+    enabled: enable,
+    keepPreviousData: true, // eski data yo‘qolmasin
+  });
+
+  const handlePopupScroll: TreeSelectProps["onPopupScroll"] = (e) => {
+    const target = e.target as HTMLDivElement;
+
+    if (
+      hasMore &&
+      !isFetching &&
+      target.scrollTop + target.offsetHeight >= target.scrollHeight - 5
+    ) {
+      setSerPage((prev) => prev + 1);
+    }
+  };
+
+  // console.log(newServiceData);
+
+  useEffect(() => {
+    if (servicesData?.data?.length) {
+      setTreeData2((prev) => [
+        ...prev,
+        ...servicesData.data.map((category) => ({
+          key: `cat-${category.id}`, // unique key
+          value: category.id,
+          title: category.name,
+          selectable: false,
+          children: category.services.map((srv) => ({
+            key: `srv-${srv.id}`, // unique key
+            value: srv.id,
+            title: srv.name,
+          })),
+        })),
+      ]);
+
+      if (servicesData.data.length < 10) {
+        setHasMore(false); // end of list
+      }
+    }
+  }, [servicesData]);
+
+  // const takeServicesFromBack = () => setEnable(true);
 
   return (
     <div>
       <div className="flex items-center justify-between my-4">
         {/* Orqaga qaytish */}
+        {contextHolder}
         <div className="flex items-center gap-4">
           <Link
             to="/employees"
@@ -130,17 +272,135 @@ export default function EmployeeInfo() {
 
         {/* Edit tugmasi */}
         <div className="flex gap-3">
-          <button className="cursor-pointer px-6 py-2 border border-[#e7e7e7] rounded-md text-[14px] flex gap-2 hover:bg-[#E6F4FF] transition-all duration-150">
+          <button
+            onClick={showModal}
+            className="cursor-pointer text-blue-500 border-blue-500 px-6 py-2 border  rounded-md text-[14px] flex gap-2 hover:bg-[#E6F4FF] transition-all duration-150"
+          >
             <BiSolidEditAlt className="text-[18px]" />
             Tahrirlash
           </button>
 
-          <button className="cursor-pointer px-6 py-2 border border-red-500 text-red-500 rounded-md text-[14px] flex gap-2 hover:bg-red-500/10 transition-all duration-150">
+          {/* <button className="cursor-pointer px-6 py-2 border border-red-500 text-red-500 rounded-md text-[14px] flex gap-2 hover:bg-red-500/10 transition-all duration-150">
             <IoTrashOutline className="text-[18px]" />
             O'chirish
-          </button>
+          </button> */}
         </div>
       </div>
+
+      {/* Modal */}
+      <Modal
+        title="Basic Modal"
+        closable={{ "aria-label": "Custom Close Button" }}
+        open={isModalOpen}
+        onOk={handleOk}
+        onCancel={handleCancel}
+        footer={false}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={(values) => {
+            const payload = {
+              fio: values.fio,
+              username: values.username,
+              phone: values.phone,
+              role: values.role,
+              more: values.more,
+              doctor: values.doctor
+                ? {
+                    experience_year: values.doctor.experience_year,
+                    services: treeSelectValues, // backendga faqat id yuboriladi
+                  }
+                : undefined,
+            };
+
+            console.log(payload);
+
+            updateEmployeeMutate({ id: id!, data: payload });
+            //updateProfileMutate(payload); // mutationni chaqiramiz
+          }}
+        >
+          <Form.Item label="FIO" name="fio">
+            <Input />
+          </Form.Item>
+
+          <Form.Item label="Username" name="username">
+            <Input />
+          </Form.Item>
+
+          <Form.Item label="Phone" name="phone">
+            <Input />
+          </Form.Item>
+
+          <Form.Item label="Role" name="role">
+            <Input />
+          </Form.Item>
+
+          <Form.Item label="More" name="more">
+            <Input />
+          </Form.Item>
+
+          {employeeData?.data?.doctor && (
+            <>
+              <Form.Item
+                label="Experience Year"
+                name={["doctor", "experience_year"]}
+              >
+                <Input type="number" />
+              </Form.Item>
+
+              <Form.Item label="Services" name={["doctor", "services"]}>
+                <TreeSelect
+                  // onClick={takeServicesFromBack}
+                  showSearch
+                  style={{ width: "100%" }}
+                  multiple
+                  placeholder="Please select"
+                  allowClear
+                  treeCheckable
+                  onPopupScroll={handlePopupScroll}
+                  treeDefaultExpandAll
+                  showCheckedStrategy={TreeSelect.SHOW_CHILD}
+                  onChange={(v) => {
+                    setTreeSelectValues(v), console.log(v);
+                  }}
+                  treeData={treeData2}
+                  popupRender={(menu) => (
+                    <div className="">
+                      {menu}
+                      {isFetching && hasMore && (
+                        <div style={{ textAlign: "center", padding: 8 }}>
+                          <Spin
+                            indicator={<LoadingOutlined spin />}
+                            size="small"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          <div>
+            <Button
+              type="primary"
+              htmlType="submit"
+              className="flex !w-full !h-[38px]"
+            >
+              {updateEmployeeLoading ? (
+                <Spin
+                  className="!text-white"
+                  indicator={<LoadingOutlined spin />}
+                />
+              ) : (
+                "Saqlash"
+              )}
+            </Button>
+          </div>
+        </Form>
+      </Modal>
 
       {/* Body qism */}
       <div className="grid grid-cols-12 gap-4">
@@ -173,7 +433,7 @@ export default function EmployeeInfo() {
                   <div className="flex flex-col gap-2.5 mt-4">
                     <div>
                       <span className="uppercase text-[#8FA9C7]">BOLIM</span>
-                      {employeeData?.data.doctor.categories.map((item) => (
+                      {employeeData?.data?.doctor?.categories?.map((item) => (
                         <div key={item.id}>
                           <p className="font-[600]">{item.name}</p>
 

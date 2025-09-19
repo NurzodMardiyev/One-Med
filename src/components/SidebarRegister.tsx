@@ -16,14 +16,15 @@ export default function SidebarRegister() {
   const { collapsed, setCollapsed } = useCreateContext();
   const navigate = useNavigate();
   const location = useLocation();
+  console.log(location.pathname.slice(10));
 
   const toggleCollapsed = () => {
     setCollapsed(!collapsed);
   };
 
   const items: MenuItem[] = [
-    { key: "addlist", icon: <RiApps2AddLine />, label: "Ro'yhatga olish" },
-    { key: "employees", icon: <PiUserListBold />, label: "Bemorlar ro'yhati" },
+    { key: "registration", icon: <RiApps2AddLine />, label: "Ro'yhatga olish" },
+    { key: "patients", icon: <PiUserListBold />, label: "Bemorlar ro'yhati" },
     { key: "settings", icon: <IoSettingsOutline />, label: "Sozlamalar " },
   ];
 
@@ -55,7 +56,7 @@ export default function SidebarRegister() {
       </div>
       <Menu
         onClick={handleEvent}
-        defaultSelectedKeys={[location.pathname.slice(1)]}
+        defaultSelectedKeys={[location.pathname.slice(10)]}
         mode="inline"
         inlineCollapsed={collapsed}
         items={items}
