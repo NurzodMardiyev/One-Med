@@ -1,15 +1,29 @@
 // import { Select } from "antd";
 // import { MdOutlineTranslate } from "react-icons/md";
+
 import { FaRegUser } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
+import { useCreateContext } from "../context/ContextApi";
+import { useEffect, useState } from "react";
 
 export default function NavBar() {
   const location = useLocation();
+  const { getUserProfileData } = useCreateContext();
   // const handleChange = (value: string) => {
   //   console.log(`selected ${value}`);
   // };
 
-  const fio = localStorage.getItem("fio");
+  const [fio, setFio] = useState("");
+
+  useEffect(() => {
+    const FIO =
+      getUserProfileData?.data?.fio !== ""
+        ? getUserProfileData?.data?.fio
+        : localStorage.getItem("fio");
+    if (FIO) {
+      setFio(FIO);
+    }
+  }, [getUserProfileData]);
 
   return (
     <div className="  flex items-center justify-between w-full py-2 border-b border-[#e8e8e8] bg-white/20 backdrop:blur-md">

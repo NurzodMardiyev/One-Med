@@ -8,13 +8,19 @@ import {
   GetProp,
   Input,
   Modal,
+  notification,
   Select,
   Spin,
   TreeSelect,
   TreeSelectProps,
 } from "antd";
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { GetOneCategoryResponse, OneMedAdmin } from "../queries/query";
+import {
+  ChangePasswordPayload,
+  ChangePasswordResponse,
+  GetOneCategoryResponse,
+  OneMedAdmin,
+} from "../queries/query";
 import { useEffect, useState } from "react";
 import { BiSolidEditAlt } from "react-icons/bi";
 import { IoCheckmarkDoneSharp } from "react-icons/io5";
@@ -129,6 +135,21 @@ export default function Settings() {
   );
   const [deleteBool, setDeleteBool] = useState(false);
 
+  type NotificationType = "success" | "info" | "warning" | "error";
+
+  const [api, contextHolder] = notification.useNotification();
+
+  const openNotificationWithIcon = (
+    type: NotificationType,
+    message: string,
+    desc: string
+  ) => {
+    api[type]({
+      message: message,
+      description: desc,
+    });
+  };
+
   const per_page = 14;
 
   const queryClient = useQueryClient();
@@ -173,6 +194,9 @@ export default function Settings() {
             form.resetFields();
             setCloseCat(true);
           }
+
+          // ✅ Sahifani refresh qilish
+          window.location.reload();
         },
       }
     );
@@ -419,6 +443,7 @@ export default function Settings() {
           console.log("Category updated:", res);
           queryClient.invalidateQueries(["getCategory"]);
           setIsCategoryEditing(false);
+          refetch();
         },
         onError: (err) => {
           console.error("Update category error:", err);
@@ -449,26 +474,27 @@ export default function Settings() {
 
   // 🔥 mutation
 
-  const { mutate: deleteCategoryMutate, isLoading: deleteCategoryLoading } =
-    useMutation((id: string) => OneMedAdmin.deleteCategory(id), {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["getCategorylist"]);
-        setCheckCategoryName(undefined);
-        setValue("");
-        setDeleteBool(true);
-      },
-      onError: (err) => {
-        console.error("Delete category error:", err);
-      },
-    });
+  // const { mutate: deleteCategoryMutate, isLoading: deleteCategoryLoading } =
+  //   useMutation((id: string) => OneMedAdmin.deleteCategory(id), {
+  //     onSuccess: () => {
+  //       queryClient.invalidateQueries(["getCategorylist"]);
+  //       setCheckCategoryName(undefined);
+  //       setValue("");
+  //       setDeleteBool(true);
+  //     },
+  //     onError: (err) => {
+  //       console.error("Delete category error:", err);
+  //     },
+  //   });
 
   // 🔥 click handler
-  const handleDeleteCategory = (id: string) => {
-    deleteCategoryMutate(id);
-  };
+  // const handleDeleteCategory = (id: string) => {
+  //   deleteCategoryMutate(id);
+  // };
 
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalPassOpen, setIsModalPassOpen] = useState(false);
 
   const showModal = () => {
     setIsModalOpen(true);
@@ -480,6 +506,18 @@ export default function Settings() {
 
   const handleCancel = () => {
     setIsModalOpen(false);
+  };
+
+  const showModalPass = () => {
+    setIsModalPassOpen(true);
+  };
+
+  const handleOkPass = () => {
+    setIsModalPassOpen(false);
+  };
+
+  const handleCancelPass = () => {
+    setIsModalPassOpen(false);
   };
 
   // Queru orqali user profile malumotlarini olish
@@ -524,6 +562,11 @@ export default function Settings() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries(["updateProfileData"]);
+          openNotificationWithIcon(
+            "success",
+            "Profil yangilandi",
+            "Profil yangilanishi muvaffaqiyatli bo'ldi!"
+          );
         },
         onError: (err) => {
           console.error("Update profile error:", err);
@@ -531,8 +574,39 @@ export default function Settings() {
       }
     );
 
+  const { mutate: changePassword, isLoading: changingPassword } = useMutation<
+    ChangePasswordResponse,
+    unknown,
+    ChangePasswordPayload
+  >((payload) => OneMedAdmin.changePassword(payload), {
+    onSuccess: () => {
+      form.resetFields();
+      openNotificationWithIcon(
+        "success",
+        "Parol yangilandi",
+        "Parolni yodda saqladingiz degan umiddaman!"
+      );
+      setIsModalPassOpen(false);
+    },
+    onError: () => {
+      openNotificationWithIcon(
+        "error",
+        "Xatolik yuz berdi!",
+        "Parol yangilanmadi qaytadan urinib ko'ring!"
+      );
+    },
+  });
+
+  const handlePasswordSave = (values: any) => {
+    changePassword({
+      old_password: values.oldPassword,
+      new_password: values.newPassword,
+    });
+  };
+
   return (
     <div>
+      {contextHolder}
       <div className="flex items-center justify-between mt-[30px]">
         <div>
           <h1 className="text-[22px] font-[600]">Sozlamalar paneli</h1>
@@ -541,14 +615,92 @@ export default function Settings() {
           </p>
         </div>
 
-        <button
-          onClick={showModal}
-          className="flex gap-2 items-center py-2 px-4 rounded-md text-white cursor-pointer bg-[#2B7FFF]"
-        >
-          <FiPlus className="text-[20px]" />
-          Accountni sozlash
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={showModalPass}
+            className="cursor-pointer text-yellow-500 border-yellow-500 px-6 py-2 border  rounded-md text-[14px] flex gap-2 hover:bg-[#ffbc1218] transition-all duration-150"
+          >
+            Parolni o'zgartirish
+          </button>
+
+          <button
+            onClick={showModal}
+            className="flex gap-2 items-center py-2 px-4 rounded-md text-white cursor-pointer bg-[#2B7FFF]"
+          >
+            <FiPlus className="text-[20px]" />
+            Accountni sozlash
+          </button>
+        </div>
       </div>
+
+      <Modal
+        title="Admin parolini o'zgartirish"
+        closable={{ "aria-label": "Custom Close Button" }}
+        open={isModalPassOpen}
+        onOk={handleOkPass}
+        onCancel={handleCancelPass}
+        footer={false}
+      >
+        <Card className="!border-none">
+          <Form form={form} layout="vertical" onFinish={handlePasswordSave}>
+            <Form.Item
+              name="oldPassword"
+              label="Eski parolingizni kiriting"
+              className="col-span-6"
+              rules={[{ required: true, message: "Eski parolni kiriting!" }]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              name="newPassword"
+              label="Yangi parolni kiriting"
+              className="col-span-6"
+              rules={[{ required: true, message: "Yangi parolni kiriting!" }]}
+            >
+              <Input.Password />
+            </Form.Item>
+
+            <Form.Item
+              name="reNewPassword"
+              label="Parolni takrorlang"
+              className="col-span-6"
+              dependencies={["newPassword"]}
+              rules={[
+                { required: true, message: "Parolni takrorlang!" },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue("newPassword") === value) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(
+                      new Error("Parollar bir xil emas ❌")
+                    );
+                  },
+                }),
+              ]}
+            >
+              <Input.Password />
+            </Form.Item>
+
+            <div className="flex justify-end">
+              <Button
+                type="primary"
+                htmlType="submit"
+                className="!h-[38px] !py-2.5 !w-full"
+              >
+                {changingPassword ? (
+                  <Spin
+                    className="!text-white"
+                    indicator={<LoadingOutlined spin />}
+                  />
+                ) : (
+                  "Saqlash"
+                )}
+              </Button>
+            </div>
+          </Form>
+        </Card>
+      </Modal>
 
       <Modal
         title="Admin profilini sozlash"
@@ -558,94 +710,98 @@ export default function Settings() {
         onCancel={handleCancel}
         footer={false}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={(values) => {
-            const payload = {
-              fio: values.fio,
-              username: values.username,
-              role: values.role,
-              phone: values.phone,
-              more: values.more,
-              doctor: values.doctor
-                ? {
-                    experience_year: values.doctor.experience_year,
-                    services: values.doctor.services?.map((s: any) => s.value),
-                  }
-                : undefined,
-            };
+        <Card className="!border-none">
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={(values) => {
+              const payload = {
+                fio: values.fio,
+                username: values.username,
+                role: values.role,
+                phone: values.phone,
+                more: values.more,
+                doctor: values.doctor
+                  ? {
+                      experience_year: values.doctor.experience_year,
+                      services: values.doctor.services?.map(
+                        (s: any) => s.value
+                      ),
+                    }
+                  : undefined,
+              };
 
-            console.log("Yuboriladigan payload:", payload);
-            updateProfileMutate(payload);
-            // mutation yoki API call shu yerda
-          }}
-        >
-          <Form.Item label="FIO" name="fio">
-            <Input />
-          </Form.Item>
+              console.log("Yuboriladigan payload:", payload);
+              updateProfileMutate(payload);
+              // mutation yoki API call shu yerda
+            }}
+          >
+            <Form.Item label="FIO" name="fio">
+              <Input />
+            </Form.Item>
 
-          <Form.Item label="Username" name="username">
-            <Input />
-          </Form.Item>
+            <Form.Item label="Username" name="username">
+              <Input />
+            </Form.Item>
 
-          <Form.Item label="Phone" name="phone">
-            <Input />
-          </Form.Item>
+            <Form.Item label="Phone" name="phone">
+              <Input />
+            </Form.Item>
 
-          <Form.Item label="Role" name="role">
-            <Input />
-          </Form.Item>
+            <Form.Item label="Role" name="role">
+              <Input />
+            </Form.Item>
 
-          <Form.Item label="More" name="more">
-            <Input />
-          </Form.Item>
+            <Form.Item label="More" name="more">
+              <Input />
+            </Form.Item>
 
-          {getUserProfileData?.data?.doctor && (
-            <>
-              <Form.Item
-                label="Experience Year"
-                name={["doctor", "experience_year"]}
+            {getUserProfileData?.data?.doctor && (
+              <>
+                <Form.Item
+                  label="Experience Year"
+                  name={["doctor", "experience_year"]}
+                >
+                  <Input type="number" />
+                </Form.Item>
+
+                <Form.Item label="Services" name={["doctor", "services"]}>
+                  <Select
+                    mode="multiple"
+                    placeholder="Xizmatlarni tanlang"
+                    options={[
+                      {
+                        label: "Service 1",
+                        value: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                      },
+                      {
+                        label: "Service 2",
+                        value: "7fa85f64-5717-4562-b3fc-2c963f66afa6",
+                      },
+                    ]}
+                  />
+                </Form.Item>
+              </>
+            )}
+
+            <div className="flex justify-end">
+              <Button
+                type="primary"
+                htmlType="submit"
+                className="!h-[38px] !py-2.5 !w-full"
               >
-                <Input type="number" />
-              </Form.Item>
-
-              <Form.Item label="Services" name={["doctor", "services"]}>
-                <Select
-                  mode="multiple"
-                  placeholder="Xizmatlarni tanlang"
-                  options={[
-                    {
-                      label: "Service 1",
-                      value: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                    },
-                    {
-                      label: "Service 2",
-                      value: "7fa85f64-5717-4562-b3fc-2c963f66afa6",
-                    },
-                  ]}
-                />
-              </Form.Item>
-            </>
-          )}
-
-          <div className="flex justify-end">
-            <Button
-              type="primary"
-              htmlType="submit"
-              className="!h-[38px] !py-2.5 !w-full"
-            >
-              {updateProfileDataLoading ? (
-                <Spin
-                  className="!text-white"
-                  indicator={<LoadingOutlined spin />}
-                />
-              ) : (
-                "Saqlash"
-              )}
-            </Button>
-          </div>
-        </Form>
+                {updateProfileDataLoading ? (
+                  <Spin
+                    className="!text-white"
+                    indicator={<LoadingOutlined spin />}
+                  />
+                ) : (
+                  "Saqlash"
+                )}
+              </Button>
+            </div>
+          </Form>
+        </Card>
       </Modal>
 
       <div className="border md:w-full w-full border-[#e3e3e3] rounded-[10px] px-6 py-4 mb-3 mt-6">
@@ -773,7 +929,7 @@ export default function Settings() {
                           Tahrirlash
                         </Button>
                       )}
-                      {deleteCategoryLoading ? (
+                      {/* {deleteCategoryLoading ? (
                         <Spin indicator={<LoadingOutlined spin />} />
                       ) : (
                         <Button
@@ -788,7 +944,7 @@ export default function Settings() {
                         >
                           Kategoriyani o‘chirish
                         </Button>
-                      )}
+                      )} */}
                     </div>
                   </Form>
                   <Form
@@ -903,7 +1059,7 @@ export default function Settings() {
                                               }}
                                               className="text-[25px] flex items-center justify-center h-[35px] cursor-pointer text-[#2B7FFF] !w-[50px]"
                                             >
-                                              <BiSolidEditAlt />
+                                              <IoCheckmarkDoneSharp />
                                             </div>
                                           )}
                                         </div>

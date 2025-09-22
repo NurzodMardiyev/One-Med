@@ -5,14 +5,25 @@ import { useMutation, useQuery, useQueryClient } from "react-query";
 import {
   Empty,
   Modal,
-  Segmented,
   Spin,
   Form,
   Select,
   TreeSelect,
   Pagination,
+  Card,
+  Input,
+  Button,
+  Divider,
+  notification,
 } from "antd";
-import { LoadingOutlined } from "@ant-design/icons";
+import {
+  AppstoreOutlined,
+  LoadingOutlined,
+  MinusCircleOutlined,
+  PlusOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
+import dayjs from "dayjs";
 
 // ===== Icons =====
 import { IoMdArrowBack } from "react-icons/io";
@@ -21,10 +32,10 @@ import { RiUser3Line } from "react-icons/ri";
 import { LuUser, LuHeart } from "react-icons/lu";
 import { BsCalendar4, BsTelephone } from "react-icons/bs";
 import { GrDocumentText } from "react-icons/gr";
-import { FiPlus } from "react-icons/fi";
+// import { FiPlus } from "react-icons/fi";
 
 import "../App.css";
-import { OneMedAdmin } from "../queries/query";
+import { DiagnosisResponse, OneMedAdmin } from "../queries/query";
 
 // ========================= TYPES =========================
 // Pasport, ID, hujjatlar uchun
@@ -143,11 +154,28 @@ export type DoctorResponse = {
   data: Doctor;
 };
 
+export interface Recipe {
+  id: string;
+  name: string;
+  description: string;
+}
+
+// Response turi
+export interface RecipesResponse {
+  success: boolean;
+  message: string;
+  data: {
+    recipes: Recipe[];
+  };
+}
+
+type NotificationType = "success" | "info" | "warning" | "error";
 // ========================= COMPONENT =========================
 export default function PatientsInfo() {
   // Segment (Tashriflar / Dorilar) uchun state
   const [segmentValue, setSegmentValue] = useState(true);
 
+  const [form] = Form.useForm();
   // Modal (yangi tashrif qo‘shish)
   const [isVisitOpen, setIsVisitOpen] = useState(false);
 
@@ -157,12 +185,23 @@ export default function PatientsInfo() {
   // URL'dan bemor ID sini olish
   const { id } = useParams<{ id: string }>();
 
+  const [api, contextHolder] = notification.useNotification();
+
+  const openNotificationWithIcon = (
+    type: NotificationType,
+    message: string,
+    descriptioon: string
+  ) => {
+    api[type]({
+      message: message,
+      description: descriptioon,
+    });
+  };
+
   // Modal ochish-yopish handlerlari
   const showModal = () => {
     setIsVisitOpen(true);
-  };
-  const handleOk = () => {
-    setIsVisitOpen(false);
+    setSegmentValue(true);
   };
   const handleCancel = () => setIsVisitOpen(false);
 
@@ -187,8 +226,6 @@ export default function PatientsInfo() {
   >({
     queryKey: ["patientVisitesData", id, visitesPage, 10],
     queryFn: () => OneMedAdmin.patientVisitesData(id!, visitesPage, 10),
-    staleTime: Infinity, // data abadiy fresh
-    cacheTime: Infinity,
     enabled: !!id,
   });
 
@@ -228,6 +265,12 @@ export default function PatientsInfo() {
     onSuccess: () => {
       queryClient.invalidateQueries(["patient", id]); // bemorni qayta chaqirish
       visitsFetch();
+      openNotificationWithIcon(
+        "success",
+        "Bemorga tashrif qo'shildi",
+        "Yangi tashrif qo'shish operatsiyasi muvaffaqiyatli bajarildi!"
+      );
+      form.resetFields();
       setIsVisitOpen(false); // modal yopish
     },
     onError: (error) => {
@@ -244,6 +287,54 @@ export default function PatientsInfo() {
   // Doktor tanlash
   const handleSelectDoctor = (value: string) => {
     setHandleSelectDoctorState(value);
+  };
+
+  const [diagnosModal, setDiagnosModal] = useState(false);
+
+  const { mutate: diagnosMuatate, isLoading: diagnosLoading } = useMutation<
+    DiagnosisResponse, // success response type
+    Error, // error type
+    { id: string; obj: any } // mutate fn param type
+  >(({ id, obj }) => OneMedAdmin.addDiagnosis(id, obj), {
+    onSuccess: () => {
+      // Diagnos qo‘shilganda cache yangilash
+      queryClient.invalidateQueries(["Recipes", id, visitId]);
+      console.log("diagnos qo'shildi");
+
+      // ❌ setDiagnosModal(false);   // <-- buning o‘rniga modalni yopma
+    },
+  });
+
+  const [visitId, setVisitId] = useState("");
+
+  const { data: visitRecipes } = useQuery<RecipesResponse>({
+    queryKey: ["Recipes", id, visitId], // paramlarni key ichiga qo‘shamiz
+    queryFn: ({ queryKey }) => {
+      const [, id, vId] = queryKey as [string, string, string];
+      return OneMedAdmin.recipesList(id, vId);
+    },
+    enabled: !!id && !!visitId, // faqat id va visitId bo‘lsa ishlaydi
+  });
+
+  console.log(visitRecipes);
+
+  const handleTextDiagnos = (visitId: string) => {
+    console.log("visitid", visitId);
+    setVisitId(visitId);
+    setDiagnosModal(true);
+  };
+
+  const handleOkDiagnos = () => {
+    setDiagnosModal(false);
+  };
+  const handleCancelDiagnos = () => setDiagnosModal(false);
+
+  const sendDiagnos = (values: any) => {
+    console.log(values.diagnosis);
+    diagnosMuatate({
+      id: visitId,
+      obj: values,
+    });
   };
 
   // ========================= DERIVED DATA =========================
@@ -298,6 +389,7 @@ export default function PatientsInfo() {
       {/* HEADER */}
       <div className="flex items-center justify-between my-4">
         {/* Orqaga qaytish */}
+        {contextHolder}
         <div className="flex items-center gap-4">
           <Link
             to={`${
@@ -393,43 +485,65 @@ export default function PatientsInfo() {
             </div>
 
             {/* Tabs */}
-            <Segmented
+            {/* <Segmented
               onChange={() => setSegmentValue(!segmentValue)}
               options={["Tashriflar", "Dorilar"]}
               className="!p-1 seg"
               block
-            />
+            /> */}
 
             {/* Tashriflar bo‘limi */}
             <div>
               {/* Header */}
               <div className="flex justify-between items-center my-4">
                 <h3 className="font-[500]">Tashriflar tarixi</h3>
-                <button
-                  onClick={showModal}
-                  className="flex items-center text-white bg-[#4D94FF] text-[14px] px-4 py-2.5 gap-2 rounded-md cursor-pointer"
-                >
-                  <FiPlus className="text-[17px]" /> Yangi tashrif qo'shish
-                </button>
+                {location.pathname.slice(1, 7) === "doctor" ? (
+                  ""
+                ) : (
+                  <button
+                    onClick={showModal}
+                    className="flex items-center text-white bg-[#4D94FF] text-[14px] px-4 py-2.5 gap-2 rounded-md cursor-pointer"
+                  >
+                    <AppstoreOutlined className="text-[#4D94FF]" /> Yangi
+                    tashrif qo'shish
+                  </button>
+                )}
               </div>
 
-              {/* Modal */}
+              {/* Modal  yangi tashrif*/}
+
               <Modal
-                title="Yangi tashrif qo'shish."
+                title={
+                  <div className="flex items-center gap-2 text-lg font-semibold">
+                    <AppstoreOutlined className="text-[#4D94FF]" />
+                    <span>Yangi tashrif qo'shish</span>
+                  </div>
+                }
                 open={isVisitOpen}
-                onOk={handleOk}
                 onCancel={handleCancel}
                 footer={false}
+                centered
               >
                 <Form
                   onFinish={handleNewVisit}
-                  className="p-4"
                   layout="vertical"
+                  className="space-y-4"
+                  form={form}
                 >
                   {/* Doctor select */}
-                  <Form.Item name="doctor" label="Shifokor">
+                  <Form.Item
+                    name="doctor"
+                    label={
+                      <div className="flex items-center gap-1">
+                        <UserOutlined className="text-[#4D94FF]" />
+                        <span>Shifokor</span>
+                      </div>
+                    }
+                    rules={[{ required: true, message: "Shifokorni tanlang!" }]}
+                  >
                     <Select
                       className="w-full"
+                      placeholder="Shifokorni tanlang"
                       onChange={handleSelectDoctor}
                       options={employeeOptions}
                     />
@@ -437,13 +551,24 @@ export default function PatientsInfo() {
 
                   {/* Services tree */}
                   {handleSelectDoctorState && (
-                    <Form.Item name="services" label="Servislar">
+                    <Form.Item
+                      name="services"
+                      label={
+                        <div className="flex items-center gap-1">
+                          <AppstoreOutlined className="text-[#4D94FF]" />
+                          <span>Servislar</span>
+                        </div>
+                      }
+                      rules={[
+                        { required: true, message: "Servislarni tanlang!" },
+                      ]}
+                    >
                       <TreeSelect
                         showSearch
                         style={{ width: "100%" }}
                         multiple
-                        placeholder="Please select"
                         allowClear
+                        placeholder="Servislarni tanlang"
                         treeCheckable
                         treeDefaultExpandAll
                         showCheckedStrategy={TreeSelect.SHOW_CHILD}
@@ -453,72 +578,212 @@ export default function PatientsInfo() {
                   )}
 
                   {/* Submit */}
-                  <div>
-                    <button className="bg-[#4D94FF] text-white w-full py-2.5 rounded-md hover:bg-[#2B7FFF] transition-all">
+                  <Form.Item>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      block
+                      className="h-11 rounded-md"
+                    >
                       {addEmpLoading ? (
                         <Spin
-                          className="!text-white"
                           indicator={<LoadingOutlined spin />}
+                          className="!text-white"
                         />
                       ) : (
                         "Saqlash"
                       )}
-                    </button>
-                  </div>
+                    </Button>
+                  </Form.Item>
                 </Form>
               </Modal>
+              <Modal
+                title="🩺 Tashhis qo'yish"
+                open={diagnosModal}
+                onOk={handleOkDiagnos}
+                onCancel={handleCancelDiagnos}
+                footer={false}
+                width={700}
+                className="rounded-xl"
+              >
+                {diagnosLoading ? (
+                  <div className="flex justify-center items-center py-10">
+                    <Spin indicator={<LoadingOutlined spin />} size="large" />
+                  </div>
+                ) : (
+                  <Form
+                    name="dynamic_form_nest_item"
+                    onFinish={sendDiagnos}
+                    layout="vertical"
+                    autoComplete="off"
+                  >
+                    {/* Avval mavjud retseptlar */}
+                    {(visitRecipes?.data?.recipes?.length ?? 0) > 0 && (
+                      <div className="mb-6">
+                        <h3 className="text-[16px] font-semibold mb-3">
+                          📋 Mavjud retseptlar
+                        </h3>
+                        <div className="space-y-2">
+                          {visitRecipes?.data?.recipes.map(
+                            (r: any, idx: number) => (
+                              <Card
+                                key={r.id}
+                                size="small"
+                                className="rounded-md border border-gray-200 shadow-sm "
+                              >
+                                <div className="flex justify-between items-center mb-1">
+                                  <div>
+                                    <p className="font-medium">
+                                      {idx + 1}. {r.name}
+                                    </p>
+                                    <p className="text-gray-500 text-sm">
+                                      {r.description}
+                                    </p>
+                                  </div>
+                                </div>
+                              </Card>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
 
+                    {/* Yangi retsept qo'shish formi */}
+                    {location.pathname.slice(1, 7) === "doctor" && (
+                      <>
+                        <Form.List name="recipes">
+                          {(fields, { add, remove }) => (
+                            <div className="space-y-4">
+                              <h3 className="text-[16px] font-semibold">
+                                ➕ Yangi retsept qo'shish
+                              </h3>
+                              {fields.map(({ key, name, ...restField }) => (
+                                <Card
+                                  key={key}
+                                  className="rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition"
+                                >
+                                  <div className="flex gap-3 items-start">
+                                    <Form.Item
+                                      {...restField}
+                                      name={[name, "name"]}
+                                      className="flex-1"
+                                      label="💊 Dori nomi"
+                                      rules={[
+                                        {
+                                          required: true,
+                                          message: "Dori nomini kiriting",
+                                        },
+                                      ]}
+                                    >
+                                      <Input placeholder="Masalan: Paracetamol" />
+                                    </Form.Item>
+
+                                    <Form.Item
+                                      {...restField}
+                                      name={[name, "description"]}
+                                      className="flex-1"
+                                      label="📄 Tavsifi"
+                                    >
+                                      <Input placeholder="Masalan: Kuniga 2 mahal" />
+                                    </Form.Item>
+
+                                    <Button
+                                      danger
+                                      type="text"
+                                      onClick={() => remove(name)}
+                                      icon={<MinusCircleOutlined />}
+                                    />
+                                  </div>
+                                </Card>
+                              ))}
+
+                              <Form.Item>
+                                <Button
+                                  type="dashed"
+                                  onClick={() => add()}
+                                  block
+                                  icon={<PlusOutlined />}
+                                  className="rounded-lg border-dashed"
+                                >
+                                  Yangi dori qo'shish
+                                </Button>
+                              </Form.Item>
+                            </div>
+                          )}
+                        </Form.List>
+                        <Divider />
+
+                        <Form.Item className="flex justify-end">
+                          <Button
+                            type="primary"
+                            htmlType="submit"
+                            className="rounded-lg px-6"
+                          >
+                            Saqlash
+                          </Button>
+                        </Form.Item>
+                      </>
+                    )}
+                  </Form>
+                )}
+              </Modal>
               {/* Tashriflar ro‘yxati */}
               {segmentValue ? (
                 !patientVisitesData?.data?.length ? (
                   <Empty />
                 ) : (
-                  patientVisitesData?.data.map((item) => (
-                    <div
-                      key={item.id}
-                      className="border border-[#c9c9c9] rounded-[10px] border-l-[4px] border-l-[#4D94FF] px-6 py-4 mb-4"
-                    >
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-[17px] font-[500]">
-                          {item.doctor}
-                        </h4>
-                        <span className="text-[14px] text-[#676767]">
-                          {item.created_at.slice(0, 10)}
-                        </span>
-                      </div>
+                  patientVisitesData?.data.map((item) => {
+                    const formatted = dayjs(item.created_at).format(
+                      "YYYY-MM-DD HH:mm"
+                    );
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => handleTextDiagnos(item.id)}
+                        className={`border cursor-pointer border-[#c9c9c9] rounded-[10px] border-l-[4px] border-l-[#4D94FF] px-6 py-4 mb-4`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-[17px] font-[500]">
+                            {item.doctor}
+                          </h4>
+                          <span className="text-[14px] text-[#676767]">
+                            {formatted}
+                          </span>
+                        </div>
 
-                      <ul className="mt-3 flex flex-col gap-1">
-                        <li className="flex items-center text-[14px] gap-2 text-[#676767]">
-                          <span className="font-[400] text-[#000]">
-                            Status:
-                          </span>
-                          <div
-                            className={`${
-                              item.status === "pending"
-                                ? "bg-[#afc4d9]"
-                                : item.status === "active"
-                                ? "bg-[#CDF4E4]"
-                                : "bg-[#c47d7d]"
-                            } px-3 py-0.5 text-white rounded-[4px]`}
-                          >
-                            {item.status}
-                          </div>
-                        </li>
-                        <li className="flex items-center text-[14px] gap-2 text-[#676767]">
-                          <span className="font-[400] text-[#000]">
-                            Tashhis:
-                          </span>
-                          {item.diagnosis}
-                        </li>
-                        <li className="flex items-center text-[14px] gap-2 text-[#676767]">
-                          <span className="font-[400] text-[#000]">
-                            To'lov:
-                          </span>
-                          {item.total_price} so'm
-                        </li>
-                      </ul>
-                    </div>
-                  ))
+                        <ul className="mt-3 flex flex-col gap-1">
+                          <li className="flex items-center text-[14px] gap-2 text-[#676767]">
+                            <span className="font-[400] text-[#000]">
+                              Status:
+                            </span>
+                            <div
+                              className={`${
+                                item.status === "pending"
+                                  ? "bg-[#afc4d9]"
+                                  : item.status === "completed"
+                                  ? "bg-[#CDF4E4]"
+                                  : "bg-[#c47d7d]"
+                              } px-3 py-0.5 text-white rounded-[4px]`}
+                            >
+                              {item.status}
+                            </div>
+                          </li>
+                          <li className="flex items-center text-[14px] gap-2 text-[#676767]">
+                            <span className="font-[400] text-[#000]">
+                              Tashhis:
+                            </span>
+                            {item.diagnosis}
+                          </li>
+                          <li className="flex items-center text-[14px] gap-2 text-[#676767]">
+                            <span className="font-[400] text-[#000]">
+                              To'lov:
+                            </span>
+                            {item.total_price} so'm
+                          </li>
+                        </ul>
+                      </div>
+                    );
+                  })
                 )
               ) : (
                 // Agar "Dorilar" segmenti tanlansa
@@ -534,7 +799,6 @@ export default function PatientsInfo() {
                   </p>
                 </div>
               )}
-
               {/* Pagination */}
               {segmentValue &&
                 patientVisitesData?.meta?.total_items &&

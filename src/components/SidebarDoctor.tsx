@@ -23,7 +23,7 @@ export default function SidebarDoctor() {
 
   const items: MenuItem[] = [
     { key: "patients", icon: <PiUserListBold />, label: "Bemorlar ro'yhati" },
-    { key: "", icon: <IoSettingsOutline />, label: "Sozlamalar " },
+    { key: "settings", icon: <IoSettingsOutline />, label: "Sozlamalar " },
   ];
 
   const handleEvent = (e: { key: string }) => {

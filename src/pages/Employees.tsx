@@ -1,6 +1,7 @@
 import { FiPlus } from "react-icons/fi";
 import { IoSearch } from "react-icons/io5";
 import {
+  Card,
   Form,
   Input,
   Modal,
@@ -66,11 +67,12 @@ export default function Employees() {
 
   const openNotificationWithIcon = (
     type: NotificationType,
-    message: string
+    message: string,
+    desc: string
   ) => {
     api[type]({
-      message: "Notification Title",
-      description: message,
+      message: message,
+      description: desc,
     });
   };
 
@@ -111,18 +113,32 @@ export default function Employees() {
 
   useEffect(() => {
     if (servicesData?.data?.length) {
-      setTreeData2((prev) => [
-        ...prev,
-        ...servicesData.data.map((category: ServiceCategory) => ({
-          value: category.id,
-          title: category.name,
-          selectable: false,
-          children: category.services.map((srv) => ({
-            value: srv.id,
-            title: <div>{srv.name}</div>,
+      setTreeData2((prev) => {
+        const existingValues = new Set<string>();
+
+        // eski + yangi node'larni qo‘shib, dublikatlarni chiqarib tashlaymiz
+        const merged = [
+          ...prev,
+          ...servicesData.data.map((category: ServiceCategory) => ({
+            value: `cat-${category.id}`,
+            title: category.name,
+            selectable: false,
+            children: category.services.map((srv) => ({
+              value: `srv-${srv.id}`,
+              title: <div>{srv.name}</div>,
+            })),
           })),
-        })),
-      ]);
+        ];
+
+        // unique filter
+        const unique = merged.filter((node) => {
+          if (existingValues.has(node.value)) return false;
+          existingValues.add(node.value);
+          return true;
+        });
+
+        return unique;
+      });
 
       if (servicesData.data.length < 10) {
         setHasMore(false); // end of list
@@ -141,10 +157,19 @@ export default function Employees() {
   >((obj) => OneMedAdmin.addEmployee(obj), {
     onSuccess: () => {
       queryClient.invalidateQueries(["employees"]); // faqat shu query refresh bo‘ladi
+      openNotificationWithIcon(
+        "success",
+        "Xodim qo'shildi.",
+        "Xodim qo'shish operatsiyasi muvaffaqiyatli bajarildi!"
+      );
       setIsModalOpen(false);
     },
     onError: (error) => {
-      openNotificationWithIcon("error", error.message);
+      openNotificationWithIcon(
+        "error",
+        error.message,
+        "Xatolik yuz berdi qaytadan urunib ko'ring iltimos!"
+      );
     },
   });
 
@@ -276,68 +301,133 @@ export default function Employees() {
             <Spin indicator={<LoadingOutlined spin />} size="large" />
           </div>
         ) : (
-          <Form onFinish={addEmployeeFunc} layout="vertical">
-            <Form.Item name="fio" label="Familiya Ism Sharif">
-              <Input />
-            </Form.Item>
-            <Form.Item name="username" label="Username">
-              <Input />
-            </Form.Item>
-            <Form.Item name="password" label="Password">
-              <Input />
-            </Form.Item>
-            <Form.Item name="role" label="Role">
-              <Select
-                onChange={handleRoleChange}
-                options={[
-                  { value: "admin", label: "Admin" },
-                  { value: "doctor", label: "Shifokor" },
-                  { value: "registrator", label: "Registrator" },
+          <Card className="!border-none">
+            <Form onFinish={addEmployeeFunc} layout="vertical">
+              <Form.Item
+                name="fio"
+                label="Familiya Ism Sharif"
+                rules={[
+                  {
+                    required: true,
+                    message: "Familiya Ism Sharif kiritilishi kerak!",
+                  },
                 ]}
-              />
-            </Form.Item>
-
-            {showService && (
-              <Form.Item name={["doctor", "services"]} label="Servislar">
-                <TreeSelect
-                  onClick={takeServicesFromBack}
-                  showSearch
-                  style={{ width: "100%" }}
-                  multiple
-                  placeholder="Please select"
-                  allowClear
-                  treeCheckable
-                  onPopupScroll={handlePopupScroll}
-                  treeDefaultExpandAll
-                  showCheckedStrategy={TreeSelect.SHOW_CHILD}
-                  onChange={(v) => console.log(v)}
-                  treeData={treeData2}
-                  dropdownRender={(menu) => (
-                    <>
-                      {menu}
-                      {isFetching && hasMore && (
-                        <div style={{ textAlign: "center", padding: 8 }}>
-                          <Spin
-                            indicator={<LoadingOutlined spin />}
-                            size="small"
-                          />
-                        </div>
-                      )}
-                    </>
-                  )}
+              >
+                <Input />
+              </Form.Item>
+              <Form.Item
+                name="username"
+                label="Username (username oldin ishlatilmagan bo'lishi kerak)"
+                rules={[
+                  {
+                    required: true,
+                    message: "Username kiritilishi kerak!",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+              <Form.Item
+                name="password"
+                label="Password (yodda saqlang)"
+                rules={[
+                  {
+                    required: true,
+                    message: "Parol kiritilishi kerak!",
+                  },
+                  {
+                    validator: (_, value) => {
+                      if (!value) {
+                        return Promise.reject("Parol kiritilishi kerak!");
+                      }
+                      if (value.length < 8) {
+                        return Promise.reject(
+                          "Parol kamida 8 ta belgidan iborat bo‘lishi kerak!"
+                        );
+                      }
+                      if (!/[A-Z]/.test(value)) {
+                        return Promise.reject(
+                          "Parolda kamida 1 ta katta harf bo‘lishi kerak!"
+                        );
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                <Input.Password />
+              </Form.Item>
+              <Form.Item
+                name="role"
+                label="Role"
+                rules={[
+                  {
+                    required: true,
+                    message: "Role tanlanishi kerak!",
+                  },
+                ]}
+              >
+                <Select
+                  onChange={handleRoleChange}
+                  options={[
+                    { value: "admin", label: "Admin" },
+                    { value: "doctor", label: "Shifokor" },
+                    { value: "registrator", label: "Registrator" },
+                  ]}
                 />
               </Form.Item>
-            )}
 
-            <Form.Item name="phone" label="Tel raqam">
-              <Input />
-            </Form.Item>
-            <div className="flex justify-end gap-3">
-              <button className="cursor-pointer px-6 py-2 bg-[#2A81D8] border border-[#2A81D8] rounded-md text-white">
-                Saqlash
-              </button>
-            </div>
-          </Form>
+              {showService && (
+                <Form.Item name={["doctor", "services"]} label="Servislar">
+                  <TreeSelect
+                    onClick={takeServicesFromBack}
+                    showSearch
+                    style={{ width: "100%" }}
+                    multiple
+                    placeholder="Please select"
+                    allowClear
+                    treeCheckable
+                    onPopupScroll={handlePopupScroll}
+                    treeDefaultExpandAll
+                    showCheckedStrategy={TreeSelect.SHOW_CHILD}
+                    onChange={(v) => console.log(v)}
+                    treeData={treeData2}
+                    popupRender={(menu) => (
+                      <>
+                        {menu}
+                        {isFetching && hasMore && (
+                          <div style={{ textAlign: "center", padding: 8 }}>
+                            <Spin
+                              indicator={<LoadingOutlined spin />}
+                              size="small"
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
+                  />
+                </Form.Item>
+              )}
+
+              <Form.Item
+                name="phone"
+                label="Tel raqam (tel raqam oldin ishlatilmagan bo'lishi kerak)"
+                rules={[
+                  {
+                    required: true,
+                    message: "Tel raqam kiritilishi kerak!",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+              <div className="flex justify-end gap-3">
+                <button className="w-full mt-3 px-6 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-lg shadow-md transition-all cursor-pointer">
+                  Saqlash
+                </button>
+              </div>
+            </Form>
+          </Card>
         )}
       </Modal>
     </div>

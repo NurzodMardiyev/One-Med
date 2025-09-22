@@ -309,6 +309,44 @@ export type Statistic = {
   data: Data
 }
 
+export interface DiagnosisResponse {
+  success: boolean;
+  data: DiagnosisData;
+}
+
+export interface DiagnosisData {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface UpdateUserProfilePayloadUpdate {
+  fio?: string;
+  phone?: string;
+  username?: string;
+  password?: string;
+}
+
+// 🔹 Backenddan qaytadigan profil ma’lumoti
+export interface UserProfileResponseUpdate {
+  fio: string;
+  phone: string;
+  username: string;
+  createdAt?: string;
+  updatedAt?: string;
+  // backenddan keladigan boshqa fieldlar bo‘lsa qo‘shib ketasan
+}
+
+export interface ChangePasswordPayload {
+  old_password: string;
+  new_password: string;
+}
+
+export interface ChangePasswordResponse {
+  success: boolean;
+  message: string;
+}
+
 export const OneMedAdmin = {
   authLogin: async (obj:{phone: string, password: string}) => {
     const response = await axios.post(`${baseApi}/v1/auth/login`, obj, {
@@ -318,15 +356,16 @@ export const OneMedAdmin = {
       },
   })
 
-  const { access_token, refresh_token, fio } = response.data.data;
-    console.log("accessToken", response.data.data.access_token);
-    SecureStorage.setItem("accessToken", access_token);
-    SecureStorage.setItem("refreshToken", refresh_token);
-    localStorage.setItem("fio", fio )
-    console.log(response.data);
-    return response.data;
+    const { access_token, refresh_token, fio, phone, username } = response.data.data;
+      console.log("accessToken", response.data.data.access_token);
+      SecureStorage.setItem("accessToken", access_token);
+      SecureStorage.setItem("refreshToken", refresh_token);
+      localStorage.setItem("fio", fio )
+      SecureStorage.setItem("userSettingData", JSON.stringify({fio, username, phone}) )
+      console.log(response.data);
+      return response.data;
 
-  },
+    },
 
   addEmployee: async (obj: {fio: string, username: string, password: string, role: string, phone: string}) => {
     const response = await api.post(`${baseApi}/v1/users`, obj, {
@@ -590,6 +629,18 @@ updateEmployee: async (
   return response.data;
 },
 
+updateNewPassword: async (
+  id: string,
+  obj: {new_password: string}
+): Promise<{success: boolean}> => {
+  const response = await api.post(`${baseApi}/v1/users/${id}/set-password`, obj, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+},
+
 
 // Statistika
 allStat: async (): Promise<Statistic> => {
@@ -601,8 +652,11 @@ allStat: async (): Promise<Statistic> => {
   return response.data
 },
 
-lineChartData: async ()=> {
-  const response = await api.get(`${baseApi}/v1/stats/patients/yearly`, {
+lineChartData: async (type: string)=> {
+  const response = await api.get(`${baseApi}/v1/stats/patients`, {
+    params: {
+      type: type
+    },
     headers: {
       "Content-Type": "application/json"
     }
@@ -618,13 +672,58 @@ barChartData: async ()=> {
   return response.data
 },
 
-tringleData: async ()=> {
-  const response = await api.get(`${baseApi}/v1/stats/revenue/yearly`, {
+tringleData: async (type: string)=> {
+  const response = await api.get(`${baseApi}/v1/stats/revenue`, {
+     params: {
+      type: type
+    },
     headers: {
       "Content-Type": "application/json"
     }
   })
   return response.data
-}
+},
 
+ addDiagnosis: async (id: string, obj: any): Promise<DiagnosisResponse> => {
+  const response = await api.post(`${baseApi}/v1/visits/${id}/recipes`, obj, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+},
+ updateUserProfile: async (
+    obj: UpdateUserProfilePayloadUpdate
+  ): Promise<UserProfileResponseUpdate> => {
+    const response = await api.patch(`/v1/user/profile`, obj, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  },
+
+  changePassword: async (
+    payload: ChangePasswordPayload
+  ): Promise<ChangePasswordResponse> => {
+    const response = await api.post(
+      `${baseApi}/v1/users/change-password`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  },
+
+  recipesList: async (id:string, visitId: string)=> {
+  const response = await api.get(`${baseApi}/v1/patients/${id}/visits/${visitId}`, {
+    headers: {
+      "Content-Type": "application/json"
+    }
+  })
+  return response.data
+},
 }

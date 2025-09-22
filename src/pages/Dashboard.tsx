@@ -20,6 +20,8 @@ import {
 } from "recharts";
 import { useQuery } from "react-query";
 import { OneMedAdmin } from "../queries/query";
+import "../App.css";
+import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -243,109 +245,120 @@ export default function Dashboard() {
       {/* Doctor and patient */}
 
       <div className="grid grid-cols-12 gap-3 mt-4 h-[500px]">
-        <div className="col-span-6 border border-[#c8c8c8] rounded-md px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-[20px] font-[500] flex items-center gap-2">
-                <VscGraphLine className="text-[#2B7FFF]" /> Har bir shifokor
-                kuniga necha bemor ko'rmoqda
-              </h1>
-              <p className="text-[14px] font-[300] text-[#a2a2a2]">
-                Bugungi kun bo'yicha shifokorlar faoliyati
-              </p>
-            </div>
-            <button className="text-[20px] text-[#2B7FFF] cursor-pointer">
-              <IoMdTrendingUp />
-            </button>
-          </div>
-          {allStatData?.data?.doctors_stats.map((item) => (
-            <div key={item.id} className="mt-[20px] flex flex-col gap-3">
-              <div className="bg-[#AA5EEF]/10 px-4 py-4 rounded-[10px] flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-[45px] h-[45px] rounded-full flex items-center justify-center text-[#AA5EEF] bg-[#AA5EEF]/20 text-[26px]">
-                    <BiUserCheck />
-                  </div>
-                  <div>
-                    <h3 className="text-[16px] font-[500]">{item.fio}</h3>
-                    <p className="text-[14px] text-[#a2a2a2] font-[300]">
-                      Doctor
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[24px] mb-[-6px] font-[700]">
-                    {item.patient_count}
-                  </span>
-                  <span className="text-[14px] text-[#a2a2a2] font-[300]">
-                    bemor
-                  </span>
-                </div>
+        <div className="col-span-6 ">
+          <div className="border border-[#c8c8c8] rounded-md px-6 py-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-[20px] font-[500] flex items-center gap-2">
+                  <VscGraphLine className="text-[#2B7FFF]" /> Har bir shifokor
+                  kuniga necha bemor ko'rmoqda
+                </h1>
+                <p className="text-[14px] font-[300] text-[#a2a2a2]">
+                  Bugungi kun bo'yicha shifokorlar faoliyati
+                </p>
               </div>
+              <button className="text-[20px] text-[#2B7FFF] cursor-pointer">
+                <IoMdTrendingUp />
+              </button>
             </div>
-          ))}
-        </div>
-        <div className="col-span-6 border border-[#c8c8c8] rounded-md px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-[20px] font-[500] flex items-center gap-2">
-                <IoReload className="text-[#2B7FFF]" /> Bemorlar Retention Rate
-              </h1>
-              <p className="text-[14px] font-[300] text-[#a2a2a2]">
-                Yangi va qaytgan bemorlar nisbati
-              </p>
-            </div>
-            <button className="text-[20px] text-[#2B7FFF] cursor-pointer">
-              <IoMdTrendingUp />
-            </button>
-          </div>
-          <div className="flex justify-center">
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie
-                  data={dataPieChart}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius="70%"
-                  dataKey="value"
-                  label={(props) => {
-                    const { name, percent = 0 } = props;
-                    return `${name} ${(percent * 100).toFixed(0)}%`;
-                  }}
+            <div className="overflow-y-scroll h-[410px] scrollbar-hide">
+              {allStatData?.data?.doctors_stats.map((item) => (
+                <Link
+                  to={`/employees/${item.id}`}
+                  key={item.id}
+                  className="mt-[20px] flex flex-col gap-3"
                 >
-                  {dataPieChart.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}-${entry}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="grid grid-cols-6 gap-3 mt-[20px]">
-            <div className="col-span-3 flex flex-col gap-1 py-[10px] rounded-md border border-[#C6DEF5] bg-[#F3F8FD] justify-center items-center">
-              <p className="text-[#8F99A3] text-[14px] font-[300]">
-                Yangi bemorlar
-              </p>
-              <span className="text-[24px] font-[700] text-[#1173D4]">
-                {allStatData?.data?.patients_stats?.new_patients}
-              </span>
-              <p className="text-[#8F99A3] text-[14px] font-[300]">
-                {newPatient}% nisbati
-              </p>
+                  <div className="bg-[#AA5EEF]/10 px-4 py-4 rounded-[10px] flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <div className="w-[45px] h-[45px] rounded-full flex items-center justify-center text-[#AA5EEF] bg-[#AA5EEF]/20 text-[26px]">
+                        <BiUserCheck />
+                      </div>
+                      <div>
+                        <h3 className="text-[16px] font-[500]">{item.fio}</h3>
+                        <p className="text-[14px] text-[#a2a2a2] font-[300]">
+                          Doctor
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[24px] mb-[-6px] font-[700]">
+                        {item.patient_count}
+                      </span>
+                      <span className="text-[14px] text-[#a2a2a2] font-[300]">
+                        bemor
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
             </div>
-            <div className="col-span-3 flex flex-col gap-1 py-[10px] rounded-md border border-[#C9F2E1] bg-[#F3FCF8] justify-center items-center">
-              <p className="text-[#8F99A3] text-[14px] font-[300]">
-                Qaytgan bemorlar
-              </p>
-              <span className="text-[24px] font-[700] text-[#1DC981]">
-                {allStatData?.data?.patients_stats?.returned_patients}
-              </span>
-              <p className="text-[#8F99A3] text-[14px] font-[300]">
-                {returnedPatient}% nisbati
-              </p>
+          </div>
+        </div>
+        <div className="col-span-6 ">
+          <div className="border border-[#c8c8c8] rounded-md px-6 py-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-[20px] font-[500] flex items-center gap-2">
+                  <IoReload className="text-[#2B7FFF]" /> Bemorlar Retention
+                  Rate
+                </h1>
+                <p className="text-[14px] font-[300] text-[#a2a2a2]">
+                  Yangi va qaytgan bemorlar nisbati
+                </p>
+              </div>
+              <button className="text-[20px] text-[#2B7FFF] cursor-pointer">
+                <IoMdTrendingUp />
+              </button>
+            </div>
+            <div className="flex justify-center">
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={dataPieChart}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius="70%"
+                    dataKey="value"
+                    label={(props) => {
+                      const { name, percent = 0 } = props;
+                      return `${name} ${(percent * 100).toFixed(0)}%`;
+                    }}
+                  >
+                    {dataPieChart.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}-${entry}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="grid grid-cols-6 gap-3 mt-[20px]">
+              <div className="col-span-3 flex flex-col gap-1 py-[10px] rounded-md border border-[#C6DEF5] bg-[#F3F8FD] justify-center items-center">
+                <p className="text-[#8F99A3] text-[14px] font-[300]">
+                  Yangi bemorlar
+                </p>
+                <span className="text-[24px] font-[700] text-[#1173D4]">
+                  {allStatData?.data?.patients_stats?.new_patients}
+                </span>
+                <p className="text-[#8F99A3] text-[14px] font-[300]">
+                  {newPatient.toFixed(1)}% nisbati
+                </p>
+              </div>
+              <div className="col-span-3 flex flex-col gap-1 py-[10px] rounded-md border border-[#C9F2E1] bg-[#F3FCF8] justify-center items-center">
+                <p className="text-[#8F99A3] text-[14px] font-[300]">
+                  Qaytgan bemorlar
+                </p>
+                <span className="text-[24px] font-[700] text-[#1DC981]">
+                  {allStatData?.data?.patients_stats?.returned_patients}
+                </span>
+                <p className="text-[#8F99A3] text-[14px] font-[300]">
+                  {returnedPatient.toFixed(1)}% nisbati
+                </p>
+              </div>
             </div>
           </div>
         </div>

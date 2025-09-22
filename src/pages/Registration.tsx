@@ -134,6 +134,7 @@ export default function Registration() {
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(
     null
   );
+  const [isFormDisabled, setIsFormDisabled] = useState(false);
 
   // natification
 
@@ -161,20 +162,31 @@ export default function Registration() {
   };
 
   // yangi tashrif
-  const { mutate: addEmployeMutate, isLoading: addEmpLoading } = useMutation<
+  const { mutate: addNewVisitMutate, isLoading: newVisitLoading } = useMutation<
     any,
     Error,
     string
-  >((id) => OneMedAdmin.addNewVisit(id, obj), {
-    onSuccess: () => {
-      queryClient.invalidateQueries(["patient", obj]);
-      setHandleSelectDoctorState("");
-      setSelectedServices([]);
-    },
-    onError: (error) => {
-      console.log(error);
-    },
-  });
+  >(
+    (id) =>
+      OneMedAdmin.addNewVisit(id, {
+        doctor: handleSelectDoctorState,
+        services: selectedServices,
+      }),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(["patient", obj]);
+        setHandleSelectDoctorState("");
+        form.resetFields();
+        setSelectedPatientId(null);
+        setSelectedServices([]);
+        setIsFormDisabled(false);
+        openNotificationWithIcon("success", "Bemorga doctor biriktirildi");
+      },
+      onError: (error) => {
+        console.log(error);
+      },
+    }
+  );
 
   // Yangi bemor qo‘shish
   const { mutate: addPatientMutate, isLoading: addPatientLoading } =
@@ -186,11 +198,9 @@ export default function Registration() {
           // showMessage("Yangi bemor muvaffaqqiyatli qo'shildi!");
           // ✅ Forma tozalash
 
-          if (handleSelectDoctorState !== "" && selectedServices.length !== 0) {
-            addEmployeMutate(data.data.id);
-          }
           form.resetFields();
-          setSelectedPatientId(null);
+          setSelectedPatientId(null); // ✅ yangi ID saqlaymiz
+          setIsFormDisabled(false); // yangi bemorda forma tahrirlanadi
           openNotificationWithIcon("success", "Yangi bemor qo‘shildi");
           console.log("Yangi bemor qo‘shildi:", data);
           // console.log("ishlavotti");
@@ -212,6 +222,8 @@ export default function Registration() {
         onSuccess: (data) => {
           queryClient.invalidateQueries();
           form.resetFields();
+          setIsFormDisabled(false);
+          setSelectedPatientId(null);
           console.log("Bemor yangilandi:", data);
           openNotificationWithIcon("success", "Bemor yangilandi");
           // success("Bemor muvaffaqqiyatli yangilandi!");
@@ -351,10 +363,22 @@ export default function Registration() {
   });
 
   const handleSelect = (val: string, option: any) => {
-    console.log("Tanlangan:", val);
-    console.log("ID:", option.key);
     setSelectedPatientId(option.key);
+    setIsFormDisabled(true); // ✅ eski bemor bo‘lsa forma disable
     selectMutate(option.key);
+    console.log(val);
+  };
+
+  const handleDoctorSubmit = () => {
+    if (!selectedPatientId) {
+      console.error("Avval bemorni qo'shing!");
+      return;
+    }
+    console.log("Bemor ID:", selectedPatientId);
+    console.log("Shifokor ID:", handleSelectDoctorState);
+    console.log("Servislar:", selectedServices);
+
+    addNewVisitMutate(selectedPatientId);
   };
 
   const handleDocType = (value: string) => {
@@ -403,20 +427,20 @@ export default function Registration() {
       }))
     : [];
 
-  if (addPatientLoading || (updatePatientLoading && addEmpLoading)) {
-    return (
-      <div className="absolute left-0 top-0 z-[9999] w-full h-screen flex justify-center items-center bg-white/20 backdrop:blur-2xl">
-        <Spin indicator={<LoadingOutlined spin />} size="large" />
-      </div>
-    );
-  }
+  // if (addPatientLoading || updatePatientLoading) {
+  //   return (
+  //     <div className="absolute left-0 top-0 z-[9999] w-full h-screen flex justify-center items-center bg-white/20 backdrop:blur-2xl">
+  //       <Spin indicator={<LoadingOutlined spin />} size="large" />
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="w-full flex justify-center py-2 flex-col ">
       {contextHolder}
       {/* Search */}
       <div className="border md:w-full w-full border-[#e3e3e3] rounded-[10px] px-6 py-4 mb-3 register">
-        <Form className="flex items-center">
+        <Form form={form} className="flex items-center">
           <Form.Item name="search" className="!m-0 relative flex-1">
             <AutoComplete
               value={value}
@@ -441,6 +465,7 @@ export default function Registration() {
         onFinish={handleSendPatientValues}
         layout="vertical"
         className="border md:w-full w-full border-[#e3e3e3] rounded-[20px]"
+        disabled={isFormDisabled} // ✅ shu joyda disable
       >
         <div className="flex items-center text-[22px] font-[600] gap-2 bg-[#F4FCF9] rounded-t-[20px] px-[24px] py-[10px]">
           <MdOutlinePersonAddAlt className="text-[#2B7FFF] text-[25px] mt-[1px]" />
@@ -491,7 +516,6 @@ export default function Registration() {
               name="middle_name"
               label="Otasining ismi"
               className="col-span-2"
-              rules={[{ required: true, message: "Otasining ismini kiriting" }]}
             >
               <Input className="w-full !h-[40px]" />
             </Form.Item>
@@ -706,12 +730,61 @@ export default function Registration() {
               <Input className="w-full  !h-[40px]" />
             </Form.Item>
           </div>
+          <div className="px-[24px] pb-4 flex gap-4 justify-end">
+            <button
+              onClick={() => form.resetFields()}
+              className="px-[30px] bg-[#d7d7d753] py-2.5 rounded-md text-black font-[500] cursor-pointer"
+              type="button"
+            >
+              Formani tozalash
+            </button>
+            {selectedPatientId && (
+              <button
+                onClick={() => {
+                  form.resetFields(),
+                    setSelectedPatientId(null),
+                    setIsFormDisabled(false);
+                }}
+                className="px-[30px]  bg-[#d7d7d753] py-2.5 rounded-md text-black font-[500] cursor-pointer  flex justify-center items-center"
+                type="button"
+              >
+                Yangi bemor qo'shish
+              </button>
+            )}
+            {isFormDisabled ? (
+              <div
+                onClick={() => setIsFormDisabled(false)}
+                className="px-[30px]  bg-[#2B7FFF] rounded-md text-white font-[500] cursor-pointer !w-[150px] flex justify-center items-center"
+              >
+                O'zgartirish
+              </div>
+            ) : (
+              <button
+                type="submit"
+                className="px-[30px] !h-[40px] bg-[#2B7FFF] rounded-md text-white font-[500] cursor-pointer !w-[150px] flex justify-center items-center"
+              >
+                {selectedPatientId ? (
+                  addPatientLoading || updatePatientLoading ? (
+                    <Spin
+                      indicator={<LoadingOutlined spin />}
+                      className="!text-white"
+                    />
+                  ) : (
+                    "Yangilash"
+                  )
+                ) : (
+                  "Qo'shsih"
+                )}
+              </button>
+            )}
+          </div>
         </div>
+      </Form>
+      {/* Servise qo'shsih */}
 
-        {/* Servise qo'shsih */}
-
-        <div className="px-[24px] pb-4">
-          <h3 className="text-[18px] font-[600]">
+      {selectedPatientId ? (
+        <div className=" border md:w-full w-full border-[#e3e3e3] rounded-[20px] px-[24px] py-[10px] mt-4 mb-5">
+          <h3 className="text-[18px] font-[600] mt-4">
             Bemorni shifokorga biriktirish
           </h3>
           <div className="grid grid-cols-6 gap-3 mt-2">
@@ -745,19 +818,25 @@ export default function Registration() {
               </div>
             )}
           </div>
+          <div className="px-[24px] pb-4 flex gap-4 justify-end">
+            <button
+              onClick={handleDoctorSubmit}
+              className="px-[30px] !h-[40px] text-[14px] bg-[#2B7FFF] rounded-md text-white font-[500] cursor-pointer !w-[150px] flex justify-center items-center"
+            >
+              {newVisitLoading ? (
+                <Spin
+                  indicator={<LoadingOutlined spin />}
+                  className="!text-white"
+                />
+              ) : (
+                "Biriktirish"
+              )}
+            </button>
+          </div>
         </div>
-        <div className="px-[24px] pb-4 flex gap-4 justify-end">
-          <button
-            onClick={() => form.resetFields()}
-            className="px-[30px] bg-[#d7d7d753] py-2.5 rounded-md text-black font-[500] cursor-pointer"
-          >
-            Formani tozalash
-          </button>
-          <button className="px-[30px] bg-[#2B7FFF] py-2.5 rounded-md text-white font-[500] cursor-pointer">
-            {selectedPatientId ? "Yangilash" : "Qo'shsih"}
-          </button>
-        </div>
-      </Form>
+      ) : (
+        ""
+      )}
     </div>
   );
 }

@@ -13,6 +13,7 @@ import Registration from "./pages/Registration";
 import PatientsInfo from "./components/PatientsInfo";
 import Settings from "./pages/Settings";
 import EmployeeInfo from "./components/EmployeeInfo";
+import SettingDoctor from "./pages/SettingDoctor";
 
 function App() {
   return (
@@ -134,6 +135,14 @@ function App() {
             element={
               <PriviteRote>
                 <Patients />
+              </PriviteRote>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <PriviteRote>
+                <SettingDoctor />
               </PriviteRote>
             }
           />

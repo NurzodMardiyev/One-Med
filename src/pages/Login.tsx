@@ -7,15 +7,17 @@ import { useNavigate } from "react-router-dom";
 import { LoadingOutlined } from "@ant-design/icons";
 import { RuleObject } from "antd/es/form";
 import { StoreValue } from "antd/es/form/interface";
+import { useCreateContext } from "../context/ContextApi";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { setUserFio, setUserData } = useCreateContext();
   type AuthPayload = {
     phone: string;
     password: string;
   };
   type AuthResponse = {
-    data: { role: string };
+    data: { role: string; fio: string; username: string; phone: string };
   };
 
   type NotificationType = "success" | "info" | "warning" | "error";
@@ -49,6 +51,13 @@ export default function Login() {
       } else {
         navigate("/");
       }
+
+      setUserFio(data.data.fio);
+      setUserData({
+        fio: data.data.fio,
+        username: data.data.username,
+        phone: data.data.phone,
+      });
     },
     onError: (error) => {
       console.log(error?.message);

@@ -12,7 +12,9 @@ import {
 import "../App.css";
 import { useQuery } from "react-query";
 import { OneMedAdmin } from "../queries/query";
-import { Spin } from "antd";
+import { Segmented, Spin } from "antd";
+import { useState } from "react";
+import { LoadingOutlined } from "@ant-design/icons";
 
 type Props = {
   chartId: number | string;
@@ -34,35 +36,61 @@ const monthNames = [
 ];
 
 export default function DashboardCharts({ chartId }: Props) {
+  const [type, setType] = useState<"monthly" | "yearly">("monthly");
+  const [type3, setType3] = useState<"monthly" | "yearly">("monthly");
+
   if (chartId === 1) {
     const { data: lineChartData, isLoading: lineChartLoading } = useQuery({
-      queryFn: () => OneMedAdmin.lineChartData(),
-      queryKey: ["lineChartData"],
+      queryFn: () => OneMedAdmin.lineChartData(type),
+      queryKey: ["lineChartData", type], // type qo'shildi, cache to'g'ri ishlasin
       cacheTime: Infinity,
+      enabled: !!type,
       staleTime: Infinity,
     });
 
     const dataLine =
-      lineChartData?.data?.map(
-        (item: { month: number; patient_count: number }) => ({
-          name: monthNames[item.month - 1], // month 1-based
-          soni: item.patient_count,
-        })
-      ) ?? [];
+      lineChartData?.data?.map((item: any) => {
+        if (type === "yearly") {
+          // yillik -> oy nomi
+          return {
+            name: monthNames[item.month - 1],
+            soni: item.patient_count,
+          };
+        } else {
+          // oylik -> kun
+          const day = new Date(item.data).getDate();
+          return {
+            name: day.toString(), // faqat kun ko'rsatadi
+            soni: item.patient_count,
+          };
+        }
+      }) ?? [];
 
     if (lineChartLoading) {
       return (
         <div className="w-full h-[400px] flex items-center justify-center">
-          <Spin />
+          <Spin indicator={<LoadingOutlined spin />} size="large" />
         </div>
       );
     }
 
     return (
       <div>
-        <h2 className="text-[20px] font-[500] mb-4">
-          Jami bermorlar - oylik o'sish
-        </h2>
+        <div className="flex  w-full items-start justify-between">
+          <h2 className="text-[20px] font-[500] mb-4">
+            Jami bemorlar - {type === "monthly" ? "oylik" : "yillik"} o'sish
+          </h2>
+          <div className="mr-[20px]">
+            <Segmented<"monthly" | "yearly">
+              options={[
+                { label: "Oylik", value: "monthly" },
+                { label: "Yillik", value: "yearly" },
+              ]}
+              value={type}
+              onChange={(value) => setType(value)}
+            />
+          </div>
+        </div>
         <LineChart
           className=" !w-[100%] lineGraph"
           width={750}
@@ -71,20 +99,26 @@ export default function DashboardCharts({ chartId }: Props) {
           margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
         >
           <CartesianGrid strokeDasharray="5 5" />
-          <Line
-            type="monotone"
-            dataKey="soni"
-            stroke="purple"
-            strokeWidth={2}
-            // name="My data series name"
-          />
-          <XAxis dataKey="name" />
+          <Line type="monotone" dataKey="soni" stroke="blue" strokeWidth={2} />
+          <XAxis dataKey="name" stroke="#8884d8" type="category" interval={0} />
           <YAxis
-            width="auto"
-            label={{ value: "", position: "insideLeft", angle: -90 }}
+            width={60}
+            label={{ value: "", position: "insideRight", angle: -90 }}
           />
           <Legend />
-          <Tooltip />
+          <Tooltip
+            content={({ active, payload, label }) => {
+              if (active && payload && payload.length) {
+                return (
+                  <div className="bg-white border p-2 rounded shadow">
+                    <p>{`Sana: ${label}`}</p>
+                    <p>{`Soni: ${payload[0].value}`}</p>
+                  </div>
+                );
+              }
+              return null;
+            }}
+          />
         </LineChart>
       </div>
     );
@@ -110,16 +144,20 @@ export default function DashboardCharts({ chartId }: Props) {
     if (barChartLoading) {
       return (
         <div className="w-full h-[400px] flex items-center justify-center">
-          <Spin />
+          <Spin indicator={<LoadingOutlined spin />} size="large" />
         </div>
       );
     }
 
     return (
       <div>
-        <h2 className="text-[20px] font-[500] mb-4">Oylik qabullar</h2>
+        <div className="flex justify-between w-full items-center">
+          <div className="flex  w-full items-start justify-between">
+            <h2 className="text-[20px] font-[500] mb-4">Oylik qabullar</h2>
+          </div>
+        </div>
         <BarChart width={750} height={400} data={dataBar}>
-          <XAxis dataKey="name" stroke="#8884d8" />
+          <XAxis dataKey="name" stroke="#8884d8" type="category" interval={0} />
           <YAxis />
           <Tooltip />
           <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
@@ -144,32 +182,58 @@ export default function DashboardCharts({ chartId }: Props) {
     const { fill, x, y, width, height } = props;
     return <path d={getPath(x, y, width, height)} stroke="none" fill={fill} />;
   };
+
   if (chartId === 3) {
     const { data: triangleBarData, isLoading: triangleBarloading } = useQuery({
-      queryFn: () => OneMedAdmin.tringleData(),
-      queryKey: ["tringleData"],
+      queryFn: () => OneMedAdmin.tringleData(type3),
+      queryKey: ["tringleData", type3],
       cacheTime: Infinity,
       staleTime: Infinity,
+      enabled: !!type3,
     });
 
     const dataTringle =
-      triangleBarData?.data.map(
-        (item: { month: number; monthly_revenue: number }) => ({
-          name: monthNames[item.month - 1], // 1 → Yanvar
-          soni: item.monthly_revenue,
-        })
-      ) ?? [];
+      triangleBarData?.data.map((item: any) => {
+        if (type3 === "yearly") {
+          return {
+            name: monthNames[item.month - 1],
+            soni: item.monthly_revenue,
+          };
+        } else {
+          const day = new Date(item.date).getDate();
+          return {
+            name: day.toString(),
+            soni: item.daily_revenue,
+          };
+        }
+      }) ?? [];
 
     if (triangleBarloading) {
       return (
         <div className="w-full h-[400px] flex items-center justify-center">
-          <Spin />
+          <Spin indicator={<LoadingOutlined spin />} size="large" />
         </div>
       );
     }
+
     return (
       <div>
-        <h2 className="text-[20px] font-[500] mb-4">Oylik qabullar</h2>
+        <div className="flex w-full items-start justify-between">
+          <h2 className="text-[20px] font-[500] mb-4">
+            Qabullar - {type3 === "monthly" ? "oylik" : "yillik"} daromad
+          </h2>
+          <div className="mr-[20px]">
+            <Segmented<"monthly" | "yearly">
+              options={[
+                { label: "Oylik", value: "monthly" },
+                { label: "Yillik", value: "yearly" },
+              ]}
+              value={type3}
+              onChange={(value) => setType3(value)}
+            />
+          </div>
+        </div>
+
         <BarChart width={750} height={400} data={dataTringle}>
           <XAxis dataKey="name" />
           <YAxis />

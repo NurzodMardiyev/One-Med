@@ -1,27 +1,24 @@
-import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
-import { IoHomeOutline } from "react-icons/io5";
-import { LuUsers } from "react-icons/lu";
-import { LuUserPlus } from "react-icons/lu";
-import { TbReportMedical } from "react-icons/tb";
-import { FiLogOut } from "react-icons/fi";
-import type { MenuProps } from "antd";
-import { Menu } from "antd";
-import { useCreateContext } from "../context/ContextApi";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FaMedrt } from "react-icons/fa";
+import { Menu } from "antd";
+import { IoHomeOutline } from "react-icons/io5";
+import { LuUsers, LuUserPlus } from "react-icons/lu";
+import { TbReportMedical } from "react-icons/tb";
 import { IoSettingsOutline } from "react-icons/io5";
-import "../App.css";
+import { FiLogOut } from "react-icons/fi";
+import { FaMedrt } from "react-icons/fa";
+import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
+import { useCreateContext } from "../context/ContextApi";
 
-type MenuItem = Required<MenuProps>["items"][number];
+type MenuItem = Required<Parameters<typeof Menu>[0]>["items"][number];
 
 export default function Sidebar() {
   const { collapsed, setCollapsed } = useCreateContext();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const toggleCollapsed = () => {
-    setCollapsed(!collapsed);
-  };
+  const currentPath = location.pathname.split("/")[1] || "dashboard";
+
+  const toggleCollapsed = () => setCollapsed(!collapsed);
 
   const items: MenuItem[] = [
     { key: "dashboard", icon: <IoHomeOutline />, label: "Bosh sahifa" },
@@ -32,22 +29,20 @@ export default function Sidebar() {
   ];
 
   const handleEvent = (e: { key: string }) => {
-    navigate(e.key, { replace: true });
+    navigate(`/${e.key}`, { replace: true });
   };
 
-  const handleEventLogOut = (e: { key: string }) => {
-    navigate(e.key, { replace: true });
-  };
   return (
     <div className="min-h-screen w-[300px] flex flex-col ">
-      <div className="pb-4 ">
+      {/* Logo */}
+      <div className="pb-4">
         <Menu
-          onClick={handleEvent}
+          onClick={() => navigate("/")}
           inlineCollapsed={collapsed}
           mode="inline"
           items={[
             {
-              key: "/",
+              key: "logo",
               icon: <FaMedrt className="!text-[26px] !text-blue-500 " />,
               label: (
                 <p className="font-bold text-[24px] text-blue-500">One Med</p>
@@ -57,21 +52,27 @@ export default function Sidebar() {
           className="logo !border-none"
         />
       </div>
+
+      {/* Asosiy menu */}
       <Menu
         onClick={handleEvent}
-        defaultSelectedKeys={[location.pathname.slice(1)]}
+        selectedKeys={[currentPath]}
         mode="inline"
         inlineCollapsed={collapsed}
         items={items}
         className="!border-none"
       />
+
+      {/* Logout */}
       <Menu
-        onClick={handleEventLogOut}
+        onClick={() => navigate("/")}
         mode="inline"
         inlineCollapsed={collapsed}
-        items={[{ key: "/", icon: <FiLogOut />, label: "Chiqish" }]}
+        items={[{ key: "logout", icon: <FiLogOut />, label: "Chiqish" }]}
         className="!border-none"
       />
+
+      {/* Collapse button */}
       <div className="!mt-auto">
         <Menu
           onClick={toggleCollapsed}
@@ -79,12 +80,12 @@ export default function Sidebar() {
           mode="inline"
           items={[
             {
-              key: "1",
+              key: "toggle",
               icon: collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />,
               label: "Sidebar",
             },
           ]}
-          className=" !border-none !mb-4 sidebarBtn"
+          className="!border-none !mb-4 sidebarBtn"
         />
       </div>
     </div>

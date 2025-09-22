@@ -34,3 +34,6 @@ svg:focus {
   padding: 4px !important ;
   font-weight: 500 !important;
 }
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

@@ -18,7 +18,6 @@ import {
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { OneMedAdmin, UpdateEmployeePayload } from "../queries/query";
 import {
-  Button,
   Input,
   Modal,
   Form,
@@ -26,6 +25,7 @@ import {
   TreeSelect,
   TreeSelectProps,
   notification,
+  Card,
 } from "antd";
 import { useEffect, useState } from "react";
 import { LoadingOutlined } from "@ant-design/icons";
@@ -89,14 +89,18 @@ export default function EmployeeInfo() {
   const [hasMore, setHasMore] = useState(true);
   const [treeData2, setTreeData2] = useState<any[]>([]);
   const [treeSelectValues, setTreeSelectValues] = useState<string[]>([]);
+  const [editMode, setEditMode] = useState(false);
 
   const [api, contextHolder] = notification.useNotification();
 
-  const openNotificationWithIcon = (type: NotificationType) => {
+  const openNotificationWithIcon = (
+    type: NotificationType,
+    message: string,
+    desc: string
+  ) => {
     api[type]({
-      message: "Xatolik yuz berdi",
-      description:
-        "Siz kategoriya tanlagan bo'lishingiz mumkin, Servis tanlang! .",
+      message: message,
+      description: desc,
     });
   };
 
@@ -141,11 +145,15 @@ export default function EmployeeInfo() {
   );
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalPassOpen, setIsModalPassOpen] = useState(false);
 
   const showModal = () => {
     setIsModalOpen(true);
     setEnable(true);
     setTreeSelectValues(serviceIds);
+  };
+  const showModalPassword = () => {
+    setIsModalPassOpen(true);
   };
 
   const handleOk = () => {
@@ -154,6 +162,14 @@ export default function EmployeeInfo() {
 
   const handleCancel = () => {
     setIsModalOpen(false);
+  };
+
+  const handleOkPass = () => {
+    setIsModalPassOpen(false);
+  };
+
+  const handleCancelPass = () => {
+    setIsModalPassOpen(false);
   };
 
   const queryClient = useQueryClient();
@@ -165,13 +181,47 @@ export default function EmployeeInfo() {
     >(({ id, data }) => OneMedAdmin.updateEmployee(id, data), {
       onSuccess: () => {
         queryClient.invalidateQueries(["employee", id]);
+        openNotificationWithIcon(
+          "success",
+          "Xodim ma'lumotlari yangilandi",
+          "Xodim ma'lumotlarini yangilash operatsiyasi muvaffaqiyatli bajarildi!"
+        );
         setIsModalOpen(false);
+        setEditMode(false);
       },
       onError: (err) => {
         console.error("Update employee error:", err);
-        openNotificationWithIcon("error");
+        openNotificationWithIcon(
+          "error",
+          err.message,
+          "Xatolik yuz berdi qaytadan urunib ko'ring iltimos!"
+        );
       },
     });
+
+  const { mutate: updateNewPasswordMutate } = useMutation<
+    { success: boolean },
+    Error,
+    { id: string; data: { new_password: string } }
+  >(({ id, data }) => OneMedAdmin.updateNewPassword(id, data), {
+    onSuccess: () => {
+      queryClient.invalidateQueries(["newPassword", id]);
+      openNotificationWithIcon(
+        "success",
+        "Parol yangilandi",
+        "Parolni yodda saqladingiz degan umiddaman!"
+      );
+      setIsModalPassOpen(false);
+    },
+    onError: (err) => {
+      console.error("Update employee error:", err);
+      openNotificationWithIcon(
+        "error",
+        err.message,
+        "Xatolik yuz berdi qaytadan urunib ko'ring iltimos!"
+      );
+    },
+  });
 
   useEffect(() => {
     if (employeeData?.data) {
@@ -204,17 +254,27 @@ export default function EmployeeInfo() {
     keepPreviousData: true, // eski data yo‘qolmasin
   });
 
+  const [loadingMore, setLoadingMore] = useState(false);
+
   const handlePopupScroll: TreeSelectProps["onPopupScroll"] = (e) => {
     const target = e.target as HTMLDivElement;
 
     if (
       hasMore &&
       !isFetching &&
+      !loadingMore &&
       target.scrollTop + target.offsetHeight >= target.scrollHeight - 5
     ) {
+      setLoadingMore(true);
       setSerPage((prev) => prev + 1);
     }
   };
+
+  useEffect(() => {
+    if (!isFetching) {
+      setLoadingMore(false);
+    }
+  }, [isFetching]);
 
   // console.log(newServiceData);
 
@@ -224,12 +284,11 @@ export default function EmployeeInfo() {
         ...prev,
         ...servicesData.data.map((category) => ({
           key: `cat-${category.id}`, // unique key
-          value: category.id,
+          value: `${category.id}`, // value ham unique
           title: category.name,
           selectable: false,
           children: category.services.map((srv) => ({
-            key: `srv-${srv.id}`, // unique key
-            value: srv.id,
+            value: `${srv.id}`,
             title: srv.name,
           })),
         })),
@@ -273,6 +332,13 @@ export default function EmployeeInfo() {
         {/* Edit tugmasi */}
         <div className="flex gap-3">
           <button
+            onClick={showModalPassword}
+            className="cursor-pointer text-yellow-500 border-yellow-500 px-6 py-2 border  rounded-md text-[14px] flex gap-2 hover:bg-[#ffbc1218] transition-all duration-150"
+          >
+            <BiSolidEditAlt className="text-[18px]" />
+            Parolini o'zgartirish
+          </button>
+          <button
             onClick={showModal}
             className="cursor-pointer text-blue-500 border-blue-500 px-6 py-2 border  rounded-md text-[14px] flex gap-2 hover:bg-[#E6F4FF] transition-all duration-150"
           >
@@ -289,117 +355,199 @@ export default function EmployeeInfo() {
 
       {/* Modal */}
       <Modal
-        title="Basic Modal"
+        title="Tahrirlash"
         closable={{ "aria-label": "Custom Close Button" }}
         open={isModalOpen}
         onOk={handleOk}
         onCancel={handleCancel}
         footer={false}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={(values) => {
-            const payload = {
-              fio: values.fio,
-              username: values.username,
-              phone: values.phone,
-              role: values.role,
-              more: values.more,
-              doctor: values.doctor
-                ? {
-                    experience_year: values.doctor.experience_year,
-                    services: treeSelectValues, // backendga faqat id yuboriladi
-                  }
-                : undefined,
-            };
+        <Card className="!border-none">
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={(values) => {
+              const payload = {
+                fio: values.fio,
+                username: values.username,
+                phone: values.phone,
+                role: values.role,
+                more: values.more,
+                doctor: values.doctor
+                  ? {
+                      experience_year: values.doctor.experience_year,
+                      services: treeSelectValues, // backendga faqat id yuboriladi
+                    }
+                  : undefined,
+              };
 
-            console.log(payload);
+              updateEmployeeMutate({ id: id!, data: payload });
+              //updateProfileMutate(payload); // mutationni chaqiramiz
+            }}
+          >
+            <Form.Item label="FIO" name="fio">
+              <Input disabled={!editMode} />
+            </Form.Item>
 
-            updateEmployeeMutate({ id: id!, data: payload });
-            //updateProfileMutate(payload); // mutationni chaqiramiz
-          }}
-        >
-          <Form.Item label="FIO" name="fio">
-            <Input />
-          </Form.Item>
+            <Form.Item label="Username" name="username">
+              <Input disabled={!editMode} />
+            </Form.Item>
 
-          <Form.Item label="Username" name="username">
-            <Input />
-          </Form.Item>
+            <Form.Item label="Phone" name="phone">
+              <Input disabled={!editMode} />
+            </Form.Item>
 
-          <Form.Item label="Phone" name="phone">
-            <Input />
-          </Form.Item>
+            <Form.Item label="Role" name="role">
+              <Input disabled={true} />
+            </Form.Item>
 
-          <Form.Item label="Role" name="role">
-            <Input />
-          </Form.Item>
+            <Form.Item label="More" name="more">
+              <Input disabled={!editMode} />
+            </Form.Item>
 
-          <Form.Item label="More" name="more">
-            <Input />
-          </Form.Item>
+            {employeeData?.data?.doctor && (
+              <>
+                <Form.Item
+                  label="Experience Year"
+                  name={["doctor", "experience_year"]}
+                >
+                  <Input type="number" disabled={!editMode} />
+                </Form.Item>
 
-          {employeeData?.data?.doctor && (
-            <>
-              <Form.Item
-                label="Experience Year"
-                name={["doctor", "experience_year"]}
-              >
-                <Input type="number" />
-              </Form.Item>
+                <Form.Item label="Services" name={["doctor", "services"]}>
+                  <TreeSelect
+                    // onClick={takeServicesFromBack}
+                    disabled={!editMode}
+                    showSearch
+                    style={{ width: "100%" }}
+                    multiple
+                    placeholder="Please select"
+                    allowClear
+                    treeCheckable
+                    onPopupScroll={handlePopupScroll}
+                    treeDefaultExpandAll
+                    showCheckedStrategy={TreeSelect.SHOW_CHILD}
+                    onChange={(v) => {
+                      setTreeSelectValues(v), console.log(v);
+                    }}
+                    fieldNames={{
+                      label: "title",
+                      value: "value", // bu yer value bilan bir xil bo‘lishi kerak
+                      children: "children",
+                    }}
+                    treeData={treeData2}
+                    popupRender={(menu) => (
+                      <div className="">
+                        {menu}
+                        {isFetching && hasMore && (
+                          <div style={{ textAlign: "center", padding: 8 }}>
+                            <Spin
+                              indicator={<LoadingOutlined spin />}
+                              size="small"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  />
+                </Form.Item>
+              </>
+            )}
 
-              <Form.Item label="Services" name={["doctor", "services"]}>
-                <TreeSelect
-                  // onClick={takeServicesFromBack}
-                  showSearch
-                  style={{ width: "100%" }}
-                  multiple
-                  placeholder="Please select"
-                  allowClear
-                  treeCheckable
-                  onPopupScroll={handlePopupScroll}
-                  treeDefaultExpandAll
-                  showCheckedStrategy={TreeSelect.SHOW_CHILD}
-                  onChange={(v) => {
-                    setTreeSelectValues(v), console.log(v);
-                  }}
-                  treeData={treeData2}
-                  popupRender={(menu) => (
-                    <div className="">
-                      {menu}
-                      {isFetching && hasMore && (
-                        <div style={{ textAlign: "center", padding: 8 }}>
-                          <Spin
-                            indicator={<LoadingOutlined spin />}
-                            size="small"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
-                />
-              </Form.Item>
-            </>
-          )}
-
-          <div>
-            <Button
-              type="primary"
-              htmlType="submit"
-              className="flex !w-full !h-[38px]"
-            >
-              {updateEmployeeLoading ? (
-                <Spin
-                  className="!text-white"
-                  indicator={<LoadingOutlined spin />}
-                />
+            <div>
+              {!editMode ? (
+                <div
+                  onClick={() => setEditMode(true)}
+                  className="flex justify-center cursor-pointer items-center !w-full !h-[38px] mt-3 px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg"
+                >
+                  Tahrirlash
+                </div>
               ) : (
-                "Saqlash"
+                <button
+                  type="submit"
+                  className="flex justify-center items-center !w-full !h-[38px] mt-3 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                >
+                  {updateEmployeeLoading ? (
+                    <Spin indicator={<LoadingOutlined spin />} />
+                  ) : (
+                    "Saqlash"
+                  )}
+                </button>
               )}
-            </Button>
-          </div>
-        </Form>
+            </div>
+          </Form>
+        </Card>
+      </Modal>
+
+      <Modal
+        title="Yangi parol o'rnatish"
+        closable={{ "aria-label": "Custom Close Button" }}
+        open={isModalPassOpen}
+        onOk={handleOkPass}
+        onCancel={handleCancelPass}
+        footer={false}
+      >
+        <Card className="!border-none">
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={(values) => {
+              const payload = {
+                new_password: values.new_password,
+              };
+
+              updateNewPasswordMutate({ id: id!, data: payload });
+              //updateProfileMutate(payload); // mutationni chaqiramiz
+            }}
+          >
+            <Form.Item
+              label="Yangi parol (foydalanuvchiga berish uchun yodda saqlang!)"
+              name="new_password"
+              rules={[
+                {
+                  required: true,
+                  message: "Parol kiritilishi kerak!",
+                },
+                {
+                  validator: (_, value) => {
+                    if (!value) {
+                      return Promise.reject("Parol kiritilishi kerak!");
+                    }
+                    if (value.length < 8) {
+                      return Promise.reject(
+                        "Parol kamida 8 ta belgidan iborat bo‘lishi kerak!"
+                      );
+                    }
+                    if (!/[A-Z]/.test(value)) {
+                      return Promise.reject(
+                        "Parolda kamida 1 ta katta harf bo‘lishi kerak!"
+                      );
+                    }
+                    return Promise.resolve();
+                  },
+                },
+              ]}
+            >
+              <Input />
+            </Form.Item>
+
+            <div>
+              <button
+                type="submit"
+                className="flex justify-center items-center !w-full !h-[38px] mt-3 px-6 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-lg shadow-md transition-all cursor-pointer"
+              >
+                {updateEmployeeLoading ? (
+                  <Spin
+                    className="!text-white"
+                    indicator={<LoadingOutlined spin />}
+                  />
+                ) : (
+                  "Saqlash"
+                )}
+              </button>
+            </div>
+          </Form>
+        </Card>
       </Modal>
 
       {/* Body qism */}
@@ -472,6 +620,16 @@ export default function EmployeeInfo() {
         </div>
         <div className="col-span-8">
           <div className="border bg-[#fff] border-[#E8E8E8] p-[25px] rounded-[10px] mb-4">
+            <div className="mb-2">
+              <h3 className="text-[#0079f3]">Kunlik qabul qilingan bemorlar</h3>
+              <h2 className="text-[24px] font-[600]">
+                {employeeData?.data?.doctor?.patients_stats?.daily_stats.reduce(
+                  (acc, item) => acc + Number(item.patient_count),
+                  0
+                )}
+                <span className="ms-1">bemor (oxirgi 30 kun)</span>
+              </h2>
+            </div>
             <ResponsiveContainer width="100%" height={250}>
               <AreaChart
                 data={chartData}
@@ -522,6 +680,18 @@ export default function EmployeeInfo() {
           </div>
 
           <div className="border bg-[#fff] border-[#E8E8E8] p-[25px] rounded-[10px]">
+            <div className="mb-2">
+              <h3 className="text-[#0079f3]">
+                Shifokor keltirgan kunlik tushum
+              </h3>
+              <h2 className="text-[24px] font-[600]">
+                {employeeData?.data?.doctor?.patients_stats?.daily_stats.reduce(
+                  (acc, item) => acc + Number(item.revenue.toFixed(1)),
+                  0
+                )}
+                <span className="ms-1">so'm (oxirgi 30 kun)</span>
+              </h2>
+            </div>
             <ResponsiveContainer width="100%" height={250}>
               <AreaChart
                 data={chartData2}
