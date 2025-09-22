@@ -288,7 +288,8 @@ export default function EmployeeInfo() {
           title: category.name,
           selectable: false,
           children: category.services.map((srv) => ({
-            value: `${srv.id}`,
+            key: srv.id, // ✅ endi bir xil
+            value: srv.id,
             title: srv.name,
           })),
         })),

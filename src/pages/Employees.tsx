@@ -18,9 +18,10 @@ import { BsTelephone } from "react-icons/bs";
 import { FaUserDoctor } from "react-icons/fa6";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { OneMedAdmin } from "../queries/query";
+import { baseApi, OneMedAdmin } from "../queries/query";
 import { LoadingOutlined } from "@ant-design/icons";
 import "../App.css";
+import axios from "axios";
 
 type EmployeeResponseType = {
   id: string;
@@ -124,7 +125,7 @@ export default function Employees() {
             title: category.name,
             selectable: false,
             children: category.services.map((srv) => ({
-              value: `srv-${srv.id}`,
+              value: `${srv.id}`,
               title: <div>{srv.name}</div>,
             })),
           })),
@@ -323,10 +324,44 @@ export default function Employees() {
                     required: true,
                     message: "Username kiritilishi kerak!",
                   },
+                  {
+                    validator: async (_, value) => {
+                      if (!value) return Promise.resolve();
+
+                      try {
+                        const response = await axios.post(
+                          `${baseApi}/v1/users/check?value=${encodeURIComponent(
+                            value
+                          )}`
+                        );
+
+                        if (response.data.data.is_exists) {
+                          return Promise.reject(
+                            "Bu username allaqachon ishlatilgan!"
+                          );
+                        }
+                        return Promise.resolve();
+                      } catch (err) {
+                        return Promise.reject("Server bilan aloqa xatosi!");
+                      }
+                    },
+                  },
                 ]}
               >
-                <Input />
+                <Input
+                  placeholder="Username kiriting"
+                  onKeyDown={(e) => {
+                    if (e.key === " ") {
+                      e.preventDefault(); // probel bosilishini bloklash
+                    }
+                  }}
+                  onChange={(e) => {
+                    // foydalanuvchi copy-paste qib yubormasin
+                    e.target.value = e.target.value.replace(/\s/g, "");
+                  }}
+                />
               </Form.Item>
+
               <Form.Item
                 name="password"
                 label="Password (yodda saqlang)"
@@ -411,16 +446,46 @@ export default function Employees() {
 
               <Form.Item
                 name="phone"
-                label="Tel raqam (tel raqam oldin ishlatilmagan bo'lishi kerak)"
+                label="Tel raqam"
                 rules={[
                   {
                     required: true,
-                    message: "Tel raqam kiritilishi kerak!",
+                    message: "Telefon raqam kiritilishi kerak!",
+                  },
+                  {
+                    validator: async (_, value) => {
+                      if (!value) return Promise.resolve();
+
+                      const regex = /^\+998\d{9}$/;
+                      if (!regex.test(value)) {
+                        return Promise.reject(
+                          "Telefon raqam +998 bilan 12 ta belgi bo‘lishi kerak!"
+                        );
+                      }
+
+                      try {
+                        const response = await axios.post(
+                          `${baseApi}/v1/users/check?value=${encodeURIComponent(
+                            value
+                          )}`
+                        );
+
+                        if (response.data.data.is_exists) {
+                          return Promise.reject(
+                            "Bu raqam allaqachon ishlatilgan!"
+                          );
+                        }
+                        return Promise.resolve();
+                      } catch (err) {
+                        return Promise.reject("Server bilan aloqa xatosi!");
+                      }
+                    },
                   },
                 ]}
               >
-                <Input />
+                <Input placeholder="+998XXXXXXXXX" />
               </Form.Item>
+
               <div className="flex justify-end gap-3">
                 <button className="w-full mt-3 px-6 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-lg shadow-md transition-all cursor-pointer">
                   Saqlash

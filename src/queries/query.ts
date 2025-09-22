@@ -5,7 +5,7 @@ import { Dayjs } from "dayjs";
 import { EmployeeData, EmployeeResponse } from "../components/EmployeeInfo";
 import { UpdateProfilePayload, UserProfileResponse } from "../pages/Settings";
 
-const baseApi = "https://api.babyortomed.one-med.uz";
+export const baseApi = "https://api.bm.one-med.uz";
 
 type ServiceItem = {
   id: string;
@@ -725,5 +725,17 @@ tringleData: async (type: string)=> {
     }
   })
   return response.data
+},
+
+checkUserValue: async (value: string): Promise<{ is_exists: boolean }> => {
+  const response = await api.get(
+    `${baseApi}/v1/users/check?value=${encodeURIComponent(value)}`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  return response.data.data; // <-- faqat data ichidagi objectni qaytaramiz
 },
 }

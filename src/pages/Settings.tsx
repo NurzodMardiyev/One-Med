@@ -642,7 +642,7 @@ export default function Settings() {
         footer={false}
       >
         <Card className="!border-none">
-          <Form form={form} layout="vertical" onFinish={handlePasswordSave}>
+          <Form layout="vertical" onFinish={handlePasswordSave}>
             <Form.Item
               name="oldPassword"
               label="Eski parolingizni kiriting"
