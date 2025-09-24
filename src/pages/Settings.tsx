@@ -189,14 +189,20 @@ export default function Settings() {
           if (value) {
             categoryForm.resetFields();
             getOneCategoryRefetch();
+            window.location.reload();
           } else {
             setCheckCategoryName(undefined);
             form.resetFields();
             setCloseCat(true);
+            openNotificationWithIcon(
+              "success",
+              "Muvaffaqiyatli",
+              "Kategoriya qo'shish muvaffaqiyatli amalga oshirildi!"
+            );
           }
 
           // ✅ Sahifani refresh qilish
-          window.location.reload();
+          // window.location.reload();
         },
       }
     );
@@ -605,27 +611,29 @@ export default function Settings() {
   };
 
   return (
-    <div>
+    <div className="pr-[10px] md:pr-auto">
       {contextHolder}
       <div className="flex items-center justify-between mt-[30px]">
         <div>
-          <h1 className="text-[22px] font-[600]">Sozlamalar paneli</h1>
-          <p className="text-[#8F99A3]">
+          <h1 className="md:text-[22px] text-[18px] font-[600]">
+            Sozlamalar paneli
+          </h1>
+          <p className="text-[#8F99A3] text-[14px] md:text-[16px]">
             Profile sozlamalari va kategoriyalar boshqaruvi
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 md:flex-row flex-col-reverse">
           <button
             onClick={showModalPass}
-            className="cursor-pointer text-yellow-500 border-yellow-500 px-6 py-2 border  rounded-md text-[14px] flex gap-2 hover:bg-[#ffbc1218] transition-all duration-150"
+            className="cursor-pointer text-yellow-500 border-yellow-500 md:px-6 px-3 md:py-2 py-1.5 border  rounded-md text-[14px] flex gap-2 hover:bg-[#ffbc1218] transition-all duration-150"
           >
             Parolni o'zgartirish
           </button>
 
           <button
             onClick={showModal}
-            className="flex gap-2 items-center py-2 px-4 rounded-md text-white cursor-pointer bg-[#2B7FFF]"
+            className="flex gap-2 items-center  md:px-6 px-3 md:py-2 py-1.5 rounded-md text-[14px] text-white cursor-pointer bg-[#2B7FFF]"
           >
             <FiPlus className="text-[20px]" />
             Accountni sozlash
@@ -807,11 +815,13 @@ export default function Settings() {
       <div className="border md:w-full w-full border-[#e3e3e3] rounded-[10px] px-6 py-4 mb-3 mt-6">
         <div className="flex items-center gap-3">
           <TbCategoryPlus className="text-[20px] text-[#2B7FFF] mb-1" />
-          <h2 className="text-[18px] font-[500]">Kategoriyalar qo'shish</h2>
+          <h2 className="md:text-[18px] text-[16px] font-[500]">
+            Kategoriyalar qo'shish
+          </h2>
         </div>
         <div>
           <div className="grid w-full grid-cols-12 mt-4 gap-4">
-            <div className="!col-span-4 border rounded-xl border-[#F0F0F0] px-4 py-2">
+            <div className="md:!col-span-4 !col-span-12 border rounded-xl border-[#F0F0F0] px-4 py-2">
               <h3 className="font-[500] mb-3 text-[14px] mt-3">
                 Mavjud Kategoriyalarni tanlash
               </h3>
@@ -844,7 +854,7 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="!col-span-8  relative">
+            <div className="md:!col-span-8 !col-span-12  relative">
               {getOneCategoryLoading ? (
                 <div className="absolute top-0 left-0 w-full flex justify-center items-center h-full z-[9999]">
                   <Spin indicator={<LoadingOutlined spin />} />

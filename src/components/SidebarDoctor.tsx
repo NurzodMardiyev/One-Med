@@ -33,8 +33,14 @@ export default function SidebarDoctor() {
   const handleEventLogOut = (e: { key: string }) => {
     navigate(e.key, { replace: true });
   };
+
+  const currentPath = location.pathname.split("/")[2] || "patients";
   return (
-    <div className="min-h-screen w-[300px] flex flex-col">
+    <div
+      className={`min-h-screen ${
+        collapsed ? "w-[80px]" : "w-[300px]"
+      }  flex flex-col`}
+    >
       <div className="mb-4">
         <Menu
           onClick={handleEvent}
@@ -54,7 +60,7 @@ export default function SidebarDoctor() {
       </div>
       <Menu
         onClick={handleEvent}
-        defaultSelectedKeys={[location.pathname.slice(8)]}
+        defaultSelectedKeys={[currentPath]}
         mode="inline"
         inlineCollapsed={collapsed}
         items={items}

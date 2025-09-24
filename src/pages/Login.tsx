@@ -1,6 +1,5 @@
 import { Form, Input, notification, Spin } from "antd";
 import Container from "../components/Container";
-import { FaMedrt } from "react-icons/fa";
 import { useMutation, useQueryClient } from "react-query";
 import { OneMedAdmin } from "../queries/query";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +7,7 @@ import { LoadingOutlined } from "@ant-design/icons";
 import { RuleObject } from "antd/es/form";
 import { StoreValue } from "antd/es/form/interface";
 import { useCreateContext } from "../context/ContextApi";
+import logo from "../../public/images/logo.png";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -24,11 +24,14 @@ export default function Login() {
 
   const [api, contextHolder] = notification.useNotification();
 
-  const openNotificationWithIcon = (type: NotificationType) => {
+  const openNotificationWithIcon = (
+    type: NotificationType,
+    message: string,
+    desc: string
+  ) => {
     api[type]({
-      message: "Notification Title",
-      description:
-        "This is the content of the notification. This is the content of the notification. This is the content of the notification.",
+      message: message,
+      description: desc,
     });
   };
 
@@ -61,7 +64,7 @@ export default function Login() {
     },
     onError: (error) => {
       console.log(error?.message);
-      openNotificationWithIcon("error");
+      openNotificationWithIcon("error", "Xatolik yuz berdi!", error.message);
     },
   });
 
@@ -96,10 +99,10 @@ export default function Login() {
     <div className="bg-[#ececec]">
       {contextHolder}
       <Container className="flex justify-center items-center min-h-screen ">
-        <div className="border border-[#D9D9D9] flex flex-col items-center gap-10 md:w-md w-full px-3 md:p-10 rounded-md bg-white">
+        <div className="border border-[#D9D9D9] flex flex-col items-center gap-10 md:w-md w-full px-3 md:p-10 rounded-md bg-white py-[20px] md:py-auto">
           <div className=" flex flex-col items-center">
             <div className="bg-blue-200 p-4 rounded-full">
-              <FaMedrt className="text-[30px] text-blue-500" />
+              <img src={logo} alt="" className="w-[35px]" />
             </div>
             <div className="flex flex-col items-center mt-4">
               <h1 className="text-[24px] font-semibold">Tizimga kirish</h1>

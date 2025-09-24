@@ -15,9 +15,11 @@ import {
   Button,
   Divider,
   notification,
+  Space,
 } from "antd";
 import {
   AppstoreOutlined,
+  ExclamationCircleOutlined,
   LoadingOutlined,
   MinusCircleOutlined,
   PlusOutlined,
@@ -229,8 +231,6 @@ export default function PatientsInfo() {
     enabled: !!id,
   });
 
-  console.log(patientVisitesData);
-
   // 3. Xodimlar (shifokorlar) ro‘yxati
   const { data: employeesData } = useQuery({
     queryKey: ["employees", 1, 20, "", "doctor"],
@@ -316,8 +316,6 @@ export default function PatientsInfo() {
     enabled: !!id && !!visitId, // faqat id va visitId bo‘lsa ishlaydi
   });
 
-  console.log(visitRecipes);
-
   const handleTextDiagnos = (visitId: string) => {
     console.log("visitid", visitId);
     setVisitId(visitId);
@@ -366,6 +364,106 @@ export default function PatientsInfo() {
 
   const location = useLocation();
 
+  // Show confirm
+
+  // const { mutate: updateStatus } = useMutation<any, Error, { status: string }>(
+  //   (obj) => OneMedAdmin.statusPatch(id, visitId, obj),
+  //   {
+  //     onSuccess: () => {
+  //       queryClient.invalidateQueries(["Visit", id, visitId]);
+  //       Modal.success({ content: "Holat yangilandi!" });
+  //       Modal.destroyAll();
+  //     },
+  //     onError: () => {
+  //       Modal.error({ content: "Xatolik yuz berdi!" });
+  //     },
+  //   }
+  // );
+
+  // Component ichida
+  const { mutate: updateStatus, isLoading: updateStatusLoading } = useMutation<
+    any,
+    Error,
+    { id: string; visitId: string; obj: { status: string } }
+  >(({ id, visitId, obj }) => OneMedAdmin.statusPatch(id, visitId, obj), {
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(["Visit", variables.id, variables.visitId]);
+      Modal.success({ content: "Holat yangilandi!" });
+      Modal.destroyAll();
+      visitsFetch();
+      setDiagnosModal(false);
+    },
+    onError: () => {
+      Modal.error({ content: "Xatolik yuz berdi!" });
+    },
+  });
+
+  // Funksiya chaqiradigan joy
+  const updateStatusFunc = (id: string, visitId: string, status: string) => {
+    updateStatus({ id, visitId, obj: { status } });
+  };
+
+  const { confirm } = Modal;
+  const showConfirm = () => {
+    confirm({
+      title: "Amalni tanlang",
+      icon: <ExclamationCircleOutlined />,
+      content: "Iltimos, kerakli tugmani tanlang.",
+      footer: () => (
+        <Space style={{ display: "flex", justifyContent: "flex-end" }}>
+          <Button
+            className="!border-red-500 !text-red-500 cursor-pointer"
+            onClick={() => {
+              if (!id || !visitId) {
+                Modal.error({ content: "ID yoki Visit ID topilmadi!" });
+                return;
+              }
+              updateStatusFunc(id, visitId, "cancelled");
+            }}
+          >
+            {updateStatusLoading ? (
+              <Spin indicator={<LoadingOutlined spin />} />
+            ) : (
+              "Bekor qildim"
+            )}
+          </Button>
+          <Button
+            className="!border-blue-500 !text-blue-500 cursor-pointer"
+            onClick={() => {
+              if (!id || !visitId) {
+                Modal.error({ content: "ID yoki Visit ID topilmadi!" });
+                return;
+              }
+              updateStatusFunc(id, visitId, "in_progress");
+            }}
+          >
+            {updateStatusLoading ? (
+              <Spin indicator={<LoadingOutlined spin />} />
+            ) : (
+              "Ko'ryabman"
+            )}
+          </Button>
+          <Button
+            className="!border-green-500 !text-green-500 cursor-pointer"
+            onClick={() => {
+              if (!id || !visitId) {
+                Modal.error({ content: "ID yoki Visit ID topilmadi!" });
+                return;
+              }
+              updateStatusFunc(id, visitId, "completed");
+            }}
+          >
+            {updateStatusLoading ? (
+              <Spin indicator={<LoadingOutlined spin />} />
+            ) : (
+              "Ko'rib bo'ldim"
+            )}
+          </Button>
+        </Space>
+      ),
+    });
+  };
+
   // ========================= LOADING / ERROR =========================
   if (isLoading) {
     return (
@@ -385,7 +483,7 @@ export default function PatientsInfo() {
 
   // ========================= RENDER =========================
   return (
-    <div>
+    <div className="pr-[10px] md:pr-auto">
       {/* HEADER */}
       <div className="flex items-center justify-between my-4">
         {/* Orqaga qaytish */}
@@ -399,7 +497,7 @@ export default function PatientsInfo() {
                 ? "/register/patients"
                 : "/patients"
             }`}
-            className="flex items-center gap-1 px-6 py-2.5 text-[14px] font-[500] rounded-md hover:bg-[#E6F4FF]"
+            className="items-center hidden md:flex gap-1 px-6 py-2.5 text-[14px] font-[500] rounded-md hover:bg-[#E6F4FF]"
           >
             <IoMdArrowBack className="text-[16px]" />
             Orqaga
@@ -412,10 +510,10 @@ export default function PatientsInfo() {
               {logo2}
             </div>
             <div>
-              <h2 className="text-[22px] font-[600] mb-[-5px]">
+              <h2 className="md:text-[22px] text-[18px] font-[600] mb-[-5px]">
                 {patientData?.data.first_name} {patientData?.data.last_name}
               </h2>
-              <p className="text-[#9D99AB] font-[300] text-[14px]">
+              <p className="text-[#9D99AB] font-[300] md:text-[14px] text-[12px]">
                 {age} yosh, {gender}
               </p>
             </div>
@@ -434,11 +532,13 @@ export default function PatientsInfo() {
       {/* MA’LUMOT BLOKLARI */}
       <div className="grid grid-cols-12 gap-4 mb-3">
         {/* LEFT: Asosiy ma'lumotlar */}
-        <div className="col-span-4 flex flex-col gap-3">
+        <div className="md:col-span-4 col-span-12 flex flex-col gap-3">
           <div className="border bg-[#fff] border-[#E8E8E8] p-[25px] rounded-[10px]">
             <div className="flex items-center gap-2">
-              <RiUser3Line className="text-[#2B7FFF] text-[22px]" />
-              <h3 className="text-[20px] font-[500]">Asosiy ma'lumotlar</h3>
+              <RiUser3Line className="text-[#2B7FFF] md:text-[22px] text-[18px]" />
+              <h3 className="md:text-[20px] text-[16px] font-[500]">
+                Asosiy ma'lumotlar
+              </h3>
             </div>
 
             {/* Avatar */}
@@ -454,7 +554,7 @@ export default function PatientsInfo() {
             </div>
 
             {/* Qo‘shimcha info */}
-            <div className="flex flex-col gap-3 mt-[40px]">
+            <div className="flex flex-col gap-3 mt-[40px] text-[12px] md:text-[16px]">
               <div className="flex items-center gap-4">
                 <BsCalendar4 />
                 <p>{patientData?.data.date_of_birth}</p>
@@ -476,12 +576,14 @@ export default function PatientsInfo() {
         </div>
 
         {/* RIGHT: Tibbiy tarix */}
-        <div className="col-span-8">
+        <div className="md:col-span-8 col-span-12">
           <div className="border bg-[#fff] border-[#E8E8E8] p-[25px] rounded-[10px]">
             {/* Header */}
             <div className="flex items-center gap-2 mb-3">
-              <GrDocumentText className="text-[22px]" />
-              <h3 className="text-[20px] font-[500]">Tibbiy tarix</h3>
+              <GrDocumentText className="md:text-[22px] text-[18px]" />
+              <h3 className="md:text-[20px] text-[16px] font-[500]">
+                Tibbiy tarix
+              </h3>
             </div>
 
             {/* Tabs */}
@@ -496,16 +598,18 @@ export default function PatientsInfo() {
             <div>
               {/* Header */}
               <div className="flex justify-between items-center my-4">
-                <h3 className="font-[500]">Tashriflar tarixi</h3>
+                <h3 className="font-[500] text-[14px] md:text-[16px]">
+                  Tashriflar tarixi
+                </h3>
                 {location.pathname.slice(1, 7) === "doctor" ? (
                   ""
                 ) : (
                   <button
                     onClick={showModal}
-                    className="flex items-center text-white bg-[#4D94FF] text-[14px] px-4 py-2.5 gap-2 rounded-md cursor-pointer"
+                    className="flex items-center text-white bg-[#4D94FF] text-[12px] px-4 py-2.5 gap-2 rounded-md cursor-pointer"
                   >
-                    <AppstoreOutlined className="text-[#4D94FF]" /> Yangi
-                    tashrif qo'shish
+                    <AppstoreOutlined className="text-[#4D94FF] hidden md:block" />{" "}
+                    Yangi tashrif qo'shish
                   </button>
                 )}
               </div>
@@ -514,7 +618,7 @@ export default function PatientsInfo() {
 
               <Modal
                 title={
-                  <div className="flex items-center gap-2 text-lg font-semibold">
+                  <div className="flex text-[12px] md:text-[16px] items-center gap-2 text-lg font-semibold">
                     <AppstoreOutlined className="text-[#4D94FF]" />
                     <span>Yangi tashrif qo'shish</span>
                   </div>
@@ -705,7 +809,7 @@ export default function PatientsInfo() {
                                   icon={<PlusOutlined />}
                                   className="rounded-lg border-dashed"
                                 >
-                                  Yangi dori qo'shish
+                                  Yangi retsept qo'shish
                                 </Button>
                               </Form.Item>
                             </div>
@@ -713,14 +817,23 @@ export default function PatientsInfo() {
                         </Form.List>
                         <Divider />
 
-                        <Form.Item className="flex justify-end">
-                          <Button
-                            type="primary"
-                            htmlType="submit"
-                            className="rounded-lg px-6"
-                          >
-                            Saqlash
-                          </Button>
+                        <Form.Item className="!flex justify-end">
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={showConfirm}
+                              type="button"
+                              className="rounded-md !px-10 border !h-[36px] flex justify-center items-center cursor-pointer"
+                            >
+                              Statusni o'zgartirish
+                            </button>
+                            <Button
+                              type="primary"
+                              htmlType="submit"
+                              className="rounded-md !px-10 !h-[36px]"
+                            >
+                              Saqlash
+                            </Button>
+                          </div>
                         </Form.Item>
                       </>
                     )}
@@ -743,16 +856,16 @@ export default function PatientsInfo() {
                         className={`border cursor-pointer border-[#c9c9c9] rounded-[10px] border-l-[4px] border-l-[#4D94FF] px-6 py-4 mb-4`}
                       >
                         <div className="flex items-center justify-between">
-                          <h4 className="text-[17px] font-[500]">
+                          <h4 className="md:text-[17px] text-[13px] font-[500]">
                             {item.doctor}
                           </h4>
-                          <span className="text-[14px] text-[#676767]">
+                          <span className="md:text-[14px] text-[10px] text-[#676767]">
                             {formatted}
                           </span>
                         </div>
 
                         <ul className="mt-3 flex flex-col gap-1">
-                          <li className="flex items-center text-[14px] gap-2 text-[#676767]">
+                          <li className="flex items-center md:text-[14px] text-[12px] gap-2 text-[#676767]">
                             <span className="font-[400] text-[#000]">
                               Status:
                             </span>
@@ -760,21 +873,23 @@ export default function PatientsInfo() {
                               className={`${
                                 item.status === "pending"
                                   ? "bg-[#afc4d9]"
-                                  : item.status === "completed"
+                                  : item.status === "in_progress"
                                   ? "bg-[#CDF4E4]"
-                                  : "bg-[#c47d7d]"
+                                  : item.status === "cancelled"
+                                  ? "bg-[#c47d7d]"
+                                  : "bg-[#2ef6a3]"
                               } px-3 py-0.5 text-white rounded-[4px]`}
                             >
                               {item.status}
                             </div>
                           </li>
-                          <li className="flex items-center text-[14px] gap-2 text-[#676767]">
+                          <li className="flex items-center md:text-[14px] text-[12px] gap-2 text-[#676767]">
                             <span className="font-[400] text-[#000]">
                               Tashhis:
                             </span>
                             {item.diagnosis}
                           </li>
-                          <li className="flex items-center text-[14px] gap-2 text-[#676767]">
+                          <li className="flex items-center md:text-[14px] text-[12px] gap-2 text-[#676767]">
                             <span className="font-[400] text-[#000]">
                               To'lov:
                             </span>

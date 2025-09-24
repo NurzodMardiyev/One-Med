@@ -5,9 +5,9 @@ import { LuUsers, LuUserPlus } from "react-icons/lu";
 import { TbReportMedical } from "react-icons/tb";
 import { IoSettingsOutline } from "react-icons/io5";
 import { FiLogOut } from "react-icons/fi";
-import { FaMedrt } from "react-icons/fa";
 import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { useCreateContext } from "../context/ContextApi";
+import logo from "../../public/images/logo.png";
 
 type MenuItem = Required<Parameters<typeof Menu>[0]>["items"][number];
 
@@ -33,9 +33,13 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="min-h-screen w-[300px] flex flex-col ">
+    <div
+      className={`min-h-screen ${
+        collapsed ? "w-[80px]" : "w-[300px]"
+      }  flex flex-col`}
+    >
       {/* Logo */}
-      <div className="pb-4">
+      <div className="">
         <Menu
           onClick={() => navigate("/")}
           inlineCollapsed={collapsed}
@@ -43,7 +47,11 @@ export default function Sidebar() {
           items={[
             {
               key: "logo",
-              icon: <FaMedrt className="!text-[26px] !text-blue-500 " />,
+              icon: (
+                <div>
+                  <img src={logo} alt="" className="w-[35px]" />
+                </div>
+              ),
               label: (
                 <p className="font-bold text-[24px] text-blue-500">One Med</p>
               ),
@@ -60,7 +68,7 @@ export default function Sidebar() {
         mode="inline"
         inlineCollapsed={collapsed}
         items={items}
-        className="!border-none"
+        className="!border-none flex-1 !pt-4"
       />
 
       {/* Logout */}
@@ -73,7 +81,7 @@ export default function Sidebar() {
       />
 
       {/* Collapse button */}
-      <div className="!mt-auto">
+      <div className="!mt-auto !mb-0">
         <Menu
           onClick={toggleCollapsed}
           inlineCollapsed={collapsed}
@@ -85,7 +93,7 @@ export default function Sidebar() {
               label: "Sidebar",
             },
           ]}
-          className="!border-none !mb-4 sidebarBtn"
+          className="!border-none !pb-4 sidebarBtn"
         />
       </div>
     </div>

@@ -72,7 +72,7 @@ export default function Dashboard() {
       </div>
     ),
     desp: (
-      <p className="flex items-center font-[300] gap-2 text-[12px] text-[#ababab] mt-[-4px]">
+      <p className="flex items-center font-[300] gap-2 md:text-[12px] text-[10px] text-[#ababab] mt-[-4px]">
         <LuUsers /> O'tgan oyga nisbatan{" "}
         {allStatData?.data?.patients_stats?.change_from_last_month?.percentage
           ? allStatData?.data?.patients_stats?.change_from_last_month
@@ -102,7 +102,7 @@ export default function Dashboard() {
       </div>
     ),
     desp: (
-      <p className="flex items-center font-[300] gap-2 text-[12px] text-[#ababab] mt-[-4px]">
+      <p className="flex items-center font-[300] gap-2 md:text-[12px] text-[10px] text-[#ababab] mt-[-4px]">
         <LuUsers /> {allStatData?.data?.visits_stats?.pending_visits} ta
         kutilayotgan tekshiruv
       </p>
@@ -127,7 +127,7 @@ export default function Dashboard() {
       </div>
     ),
     desp: (
-      <p className="flex items-center font-[300] gap-2 text-[12px] text-[#ababab] mt-[-4px]">
+      <p className="flex items-center font-[300] gap-2 md:text-[12px] text-[10px] text-[#ababab] mt-[-4px]">
         <IoMdTrendingUp /> O'tgan oyga nisbatan{" "}
         {allStatData?.data?.visits_stats?.change_from_last_month?.percentage
           ? allStatData?.data?.visits_stats?.change_from_last_month
@@ -151,7 +151,7 @@ export default function Dashboard() {
       </div>
     ),
     desp: (
-      <p className="flex items-center font-[300] gap-2 text-[12px] text-[#ababab] mt-[-4px]">
+      <p className="flex items-center font-[300] gap-2 md:text-[12px] text-[10px] text-[#ababab] mt-[-4px]">
         <LuUsers /> {allStatData?.data?.staff_stats?.doctor_count} shifokor,{" "}
         {allStatData?.data?.staff_stats?.admin_count} admin,{" "}
         {allStatData?.data?.staff_stats?.registrator_count} registrator
@@ -203,12 +203,12 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="py-4">
+    <div className="py-4 pr-[10px] md:pr-auto">
       <div className="px-8 py-6 rounded-md border border-[#c9cfcf] bg-[#E3F2F2]">
-        <h1 className="text-[24px] font-semibold">
+        <h1 className="md:text-[24px] text-[18px] font-semibold">
           Tibbiy Klinika Boshqaruviga Xush Kelibsiz
         </h1>
-        <p className="text-[#a9a9a9] mt-1">
+        <p className="text-[#a9a9a9] mt-1 md:text-[16px] text-[12px]">
           Bizning keng qamrovli tibbiy boshqaruv tizimimiz yordamida
           klinikangizni samarali boshqaring.
         </p>
@@ -217,16 +217,16 @@ export default function Dashboard() {
       {/* Cards */}
 
       <div className="grid grid-cols-12 gap-3 mt-4">
-        <div className="col-span-3">
+        <div className="md:col-span-3 col-span-6">
           <DashboardCard obj={patients} />
         </div>
-        <div className="col-span-3">
+        <div className="md:col-span-3 col-span-6">
           <DashboardCard obj={accepts} />
         </div>
-        <div className="col-span-3">
+        <div className="md:col-span-3 col-span-6">
           <DashboardCard obj={income} />
         </div>
-        <div className="col-span-3">
+        <div className="md:col-span-3 col-span-6">
           <DashboardCard obj={employee} />
         </div>
       </div>
@@ -245,15 +245,15 @@ export default function Dashboard() {
       {/* Doctor and patient */}
 
       <div className="grid grid-cols-12 gap-3 mt-4 h-[500px]">
-        <div className="col-span-6 ">
+        <div className="md:col-span-6 col-span-12">
           <div className="border border-[#c8c8c8] rounded-md px-6 py-4">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center mb-3 md:mb-auto">
               <div>
-                <h1 className="text-[20px] font-[500] flex items-center gap-2">
-                  <VscGraphLine className="text-[#2B7FFF]" /> Har bir shifokor
-                  kuniga necha bemor ko'rmoqda
+                <h1 className="md:text-[20px] text-[16px] font-[500] flex items-center gap-2">
+                  <VscGraphLine className="text-[#2B7FFF] hidden md:block" />{" "}
+                  Har bir shifokor kuniga necha bemor ko'rmoqda
                 </h1>
-                <p className="text-[14px] font-[300] text-[#a2a2a2]">
+                <p className="md:text-[14px] text-[12px] font-[300] text-[#a2a2a2]">
                   Bugungi kun bo'yicha shifokorlar faoliyati
                 </p>
               </div>
@@ -270,21 +270,23 @@ export default function Dashboard() {
                 >
                   <div className="bg-[#AA5EEF]/10 px-4 py-4 rounded-[10px] flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                      <div className="w-[45px] h-[45px] rounded-full flex items-center justify-center text-[#AA5EEF] bg-[#AA5EEF]/20 text-[26px]">
+                      <div className="md:w-[45px] md:h-[45px] w-[35px] h-[35px] rounded-full flex items-center justify-center text-[#AA5EEF] bg-[#AA5EEF]/20 md:text-[26px] text-[20px]">
                         <BiUserCheck />
                       </div>
                       <div>
-                        <h3 className="text-[16px] font-[500]">{item.fio}</h3>
-                        <p className="text-[14px] text-[#a2a2a2] font-[300]">
+                        <h3 className="md:text-[16px] text-[13px] font-[500]">
+                          {item.fio}
+                        </h3>
+                        <p className="md:text-[14px] text-[12px] text-[#a2a2a2] font-[300]">
                           Doctor
                         </p>
                       </div>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[24px] mb-[-6px] font-[700]">
+                      <span className="md:text-[24px] mb-[-6px] text-[20px] font-[700]">
                         {item.patient_count}
                       </span>
-                      <span className="text-[14px] text-[#a2a2a2] font-[300]">
+                      <span className="md:text-[14px] text-[12px] text-[#a2a2a2] font-[300]">
                         bemor
                       </span>
                     </div>
@@ -294,15 +296,15 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-        <div className="col-span-6 ">
+        <div className="md:col-span-6 col-span-12">
           <div className="border border-[#c8c8c8] rounded-md px-6 py-4">
             <div className="flex justify-between items-center">
               <div>
-                <h1 className="text-[20px] font-[500] flex items-center gap-2">
-                  <IoReload className="text-[#2B7FFF]" /> Bemorlar Retention
-                  Rate
+                <h1 className="md:text-[20px] text-[16px] font-[500] flex items-center gap-2">
+                  <IoReload className="text-[#2B7FFF] hidden md:block" />{" "}
+                  Bemorlar Retention Rate
                 </h1>
-                <p className="text-[14px] font-[300] text-[#a2a2a2]">
+                <p className="md:text-[14px] text-[12px] font-[300] text-[#a2a2a2]">
                   Yangi va qaytgan bemorlar nisbati
                 </p>
               </div>
@@ -338,24 +340,24 @@ export default function Dashboard() {
             </div>
             <div className="grid grid-cols-6 gap-3 mt-[20px]">
               <div className="col-span-3 flex flex-col gap-1 py-[10px] rounded-md border border-[#C6DEF5] bg-[#F3F8FD] justify-center items-center">
-                <p className="text-[#8F99A3] text-[14px] font-[300]">
+                <p className="text-[#8F99A3] md:text-[14px] text-[13px] font-[300]">
                   Yangi bemorlar
                 </p>
-                <span className="text-[24px] font-[700] text-[#1173D4]">
+                <span className="md:text-[24px] text-[20px] font-[700] text-[#1173D4]">
                   {allStatData?.data?.patients_stats?.new_patients}
                 </span>
-                <p className="text-[#8F99A3] text-[14px] font-[300]">
+                <p className="text-[#8F99A3] md:text-[14px] text-[12px] font-[300]">
                   {newPatient.toFixed(1)}% nisbati
                 </p>
               </div>
               <div className="col-span-3 flex flex-col gap-1 py-[10px] rounded-md border border-[#C9F2E1] bg-[#F3FCF8] justify-center items-center">
-                <p className="text-[#8F99A3] text-[14px] font-[300]">
+                <p className="text-[#8F99A3] md:text-[14px] text-[13px] font-[300]">
                   Qaytgan bemorlar
                 </p>
-                <span className="text-[24px] font-[700] text-[#1DC981]">
+                <span className="md:text-[24px] text-[20px] font-[700] text-[#1DC981]">
                   {allStatData?.data?.patients_stats?.returned_patients}
                 </span>
-                <p className="text-[#8F99A3] text-[14px] font-[300]">
+                <p className="text-[#8F99A3] md:text-[14px] text-[12px] font-[300]">
                   {returnedPatient.toFixed(1)}% nisbati
                 </p>
               </div>

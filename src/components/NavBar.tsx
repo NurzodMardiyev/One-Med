@@ -25,14 +25,16 @@ export default function NavBar() {
     }
   }, [getUserProfileData]);
 
+  const currentPath = location.pathname.split("/")[1] || "Admin paneli";
+
   return (
-    <div className="  flex items-center justify-between w-full py-2 border-b border-[#e8e8e8] bg-white/20 backdrop:blur-md">
-      <h2 className="text-[18px] font-semibold">
-        {location.pathname === "/doctor"
-          ? "Bemorlar ro'yhati"
-          : location.pathname === "/register"
-          ? "Ro'yhatga olish"
-          : "Bosh Sahifa"}
+    <div className="  flex items-center justify-between w-full py-2 border-b border-[#e8e8e8] bg-white/20 backdrop:blur-md pr-[10px] md:pr-auto">
+      <h2 className="md:text-[18px] text-[14px] font-semibold">
+        {currentPath === "doctor"
+          ? "Shifokor paneli"
+          : currentPath === "register"
+          ? "Registratsiya paneli"
+          : "Admin paneli"}
       </h2>
 
       <div className="flex items-center gap-3">
@@ -51,8 +53,15 @@ export default function NavBar() {
         </div> */}
 
         <div className="flex items-center gap-2">
-          <FaRegUser className="text-[#676767]" />
-          <p>Shifokor ({fio})</p>
+          <FaRegUser className="text-[#676767] md:text-[16px] text-[12px]" />
+          <p>
+            {currentPath === "doctor"
+              ? "Shifokor"
+              : currentPath === "register"
+              ? "Registrator"
+              : "Admin"}{" "}
+            ({fio})
+          </p>
         </div>
       </div>
     </div>

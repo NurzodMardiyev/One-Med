@@ -91,34 +91,46 @@ export default function SettingDoctor() {
   };
 
   return (
-    <div>
+    <div className="pr-[10px] md:pr-auto">
       <div className="mt-4 mb-2">
-        <h2 className="text-[20px] font-[500]">
+        <h2 className="md:text-[20px] text-[16px] font-[500]">
           Foydalanuvchi shaxsiy kabinetini sozlash
         </h2>
       </div>
       <Form form={form} layout="vertical" onFinish={handleSave}>
         <div>
-          <h3 className="text-[16px] font-[500]">
+          <h3 className="md:text-[16px] text-[14px] font-[500]">
             Umumiy ma’lumotlar va ularni o‘zgartirish
           </h3>
         </div>
         <div className="grid grid-cols-12 gap-x-4">
-          <Form.Item name="fio" label="FIO" className="col-span-6">
+          <Form.Item
+            name="fio"
+            label="FIO"
+            className="md:col-span-6 col-span-12"
+          >
             <Input disabled={!isEditing} />
           </Form.Item>
-          <Form.Item name="username" label="Username" className="col-span-6">
+          <Form.Item
+            name="username"
+            label="Username"
+            className="md:col-span-6 col-span-12"
+          >
             <Input disabled={!isEditing} />
           </Form.Item>
-          <Form.Item name="phone" label="Tel raqami" className="col-span-6">
+          <Form.Item
+            name="phone"
+            label="Tel raqami"
+            className="md:col-span-6 col-span-12"
+          >
             <Input disabled={!isEditing} />
           </Form.Item>
         </div>
-        <div className="flex gap-3 justify-end">
+        <div className="flex md:gap-3 justify-end">
           <Form.Item>
             <Button
               type="primary"
-              className="!px-6 !h-[38px]"
+              className="md:!px-6 !h-[38px] !text-[12px] md:!text-[16px]"
               onClick={handleEditToggle}
             >
               {isEditing ? "Saqlash" : "Ma’lumotlarni o‘zgartirish"}
@@ -128,7 +140,7 @@ export default function SettingDoctor() {
             <Button
               onClick={() => setShowPass(true)}
               htmlType="button"
-              className="!px-6 !h-[38px]"
+              className="md:!px-6 !text-[12px] md:!text-[16px] !h-[38px]"
             >
               Parolni o‘zgartirish
             </Button>
@@ -149,7 +161,7 @@ export default function SettingDoctor() {
             <Form.Item
               name="oldPassword"
               label="Eski parolingizni kiriting"
-              className="col-span-6"
+              className="md:col-span-6 col-span-12"
               rules={[{ required: true, message: "Eski parolni kiriting!" }]}
             >
               <Input />
@@ -157,7 +169,7 @@ export default function SettingDoctor() {
             <Form.Item
               name="newPassword"
               label="Yangi parolni kiriting"
-              className="col-span-6"
+              className="md:col-span-6 col-span-12"
               rules={[{ required: true, message: "Yangi parolni kiriting!" }]}
             >
               <Input.Password />
@@ -166,7 +178,7 @@ export default function SettingDoctor() {
             <Form.Item
               name="reNewPassword"
               label="Parolni takrorlang"
-              className="col-span-6"
+              className="md:col-span-6 col-span-12"
               dependencies={["newPassword"]}
               rules={[
                 { required: true, message: "Parolni takrorlang!" },
@@ -190,7 +202,7 @@ export default function SettingDoctor() {
               <Button
                 htmlType="submit"
                 type="primary"
-                className="!px-6 !h-[38px]"
+                className="md:!px-6 !text-[12px] md:!text-[16px] !h-[38px]"
               >
                 {changingPassword ? (
                   <Spin

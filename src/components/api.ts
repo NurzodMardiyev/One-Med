@@ -2,8 +2,11 @@ import axios from "axios";
 import SecureStorage from "react-secure-storage";
 
 const api = axios.create({
-  baseURL: "https://api.bm.one-med.uz",
+  baseURL: import.meta.env.BASE_URL,
 });
+// https://api.babyortomed.one-med.uz   /// 8080
+// https://api.bm.one-med.uz   /// 8081
+// https://api.titan-renesans.one-med.uz   /// 8082
 
 // Har bir so‘rovga access token qo‘shish
 api.interceptors.request.use(
@@ -37,7 +40,7 @@ api.interceptors.response.use(
 
       try {
         const response = await axios.post(
-          `https://api.bm.one-med.uz/v1/auth/login`,
+          `${import.meta.env.BASE_URL}/v1/auth/login`,
           { refresh: refreshToken }
         );
 

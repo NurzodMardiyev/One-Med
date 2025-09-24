@@ -386,7 +386,6 @@ export default function Registration() {
   };
 
   // Shifokor tanlaganda ID ni ushlab turadigan state
-  console.log(selectedServices);
 
   // 3. Xodimlar (shifokorlar) ro‘yxati
   const { data: employeesData } = useQuery({
@@ -436,7 +435,7 @@ export default function Registration() {
   // }
 
   return (
-    <div className="w-full flex justify-center py-2 flex-col ">
+    <div className="w-full flex justify-center py-2 flex-col pr-[10px] md:pr-auto ">
       {contextHolder}
       {/* Search */}
       <div className="border md:w-full w-full border-[#e3e3e3] rounded-[10px] px-6 py-4 mb-3 register">
@@ -467,8 +466,8 @@ export default function Registration() {
         className="border md:w-full w-full border-[#e3e3e3] rounded-[20px]"
         disabled={isFormDisabled} // ✅ shu joyda disable
       >
-        <div className="flex items-center text-[22px] font-[600] gap-2 bg-[#F4FCF9] rounded-t-[20px] px-[24px] py-[10px]">
-          <MdOutlinePersonAddAlt className="text-[#2B7FFF] text-[25px] mt-[1px]" />
+        <div className="flex items-center md:text-[22px] text-[18px] font-[600] gap-2 bg-[#F4FCF9] rounded-t-[20px] px-[24px] py-[10px]">
+          <MdOutlinePersonAddAlt className="text-[#2B7FFF] md:text-[25px] text-[20px] mt-[1px]" />
           <h2>
             {selectedPatientId
               ? "Bemor ma’lumotlarini yangilash"
@@ -476,7 +475,7 @@ export default function Registration() {
           </h2>
         </div>
         <div className="px-[24px] py-4">
-          <h3 className="text-[18px] text-red-500 font-[500]">
+          <h3 className="md:text-[18px] text-[14px] text-red-500 font-[500]">
             Majburiy ma'lumotlar
           </h3>
           <div className="grid grid-cols-6 gap-3">
@@ -484,7 +483,7 @@ export default function Registration() {
               name="first_name"
               label="Ism"
               rules={[{ required: true, message: "Ismni kiriting" }]}
-              className="col-span-2"
+              className="md:col-span-2 col-span-6"
             >
               <Input className="w-full !h-[40px]" />
             </Form.Item>
@@ -492,7 +491,7 @@ export default function Registration() {
               name="last_name"
               label="Familiya"
               rules={[{ required: true, message: "Familyani kiriting" }]}
-              className="col-span-2"
+              className="md:col-span-2 col-span-6"
             >
               <Input className="w-full  !h-[40px]" />
             </Form.Item>
@@ -500,7 +499,7 @@ export default function Registration() {
               name="date_of_birth"
               label="Tug'ilgan sana"
               rules={[{ required: true, message: "Tug'ilgan sanani kiriting" }]}
-              className="col-span-2"
+              className="md:col-span-2 col-span-6"
             >
               <DatePicker className="w-full !h-[40px]" />
             </Form.Item>
@@ -508,21 +507,21 @@ export default function Registration() {
         </div>
 
         <div className="px-[24px] pb-4">
-          <h3 className="text-[18px] text-red-500 font-[500]">
+          <h3 className="md:text-[18px] text-[14px] text-red-500 font-[500]">
             Muhim ma'lumotlar
           </h3>
           <div className="grid grid-cols-6 gap-3">
             <Form.Item
               name="middle_name"
               label="Otasining ismi"
-              className="col-span-2"
+              className="md:col-span-2 col-span-6"
             >
               <Input className="w-full !h-[40px]" />
             </Form.Item>
             <Form.Item
               name="phone"
               label="Telefon raqam"
-              className="col-span-2"
+              className="md:col-span-2 col-span-6"
               rules={[{ required: true, message: "Telefon raqam kiriting" }]}
             >
               <Input className="w-full  !h-[40px]" />
@@ -530,7 +529,7 @@ export default function Registration() {
             <Form.Item
               name="blood_group"
               label="Qon guruhi"
-              className="col-span-2"
+              className="md:col-span-2 col-span-6"
               rules={[{ required: true, message: "Qon guruhi kiriting" }]}
             >
               <Select
@@ -562,7 +561,11 @@ export default function Registration() {
               />
             </Form.Item>
 
-            <Form.Item name="gender" label="Jinsi" className="col-span-2">
+            <Form.Item
+              name="gender"
+              label="Jinsi"
+              className="md:col-span-2 col-span-6"
+            >
               <Select
                 className="w-full  !h-[40px]"
                 options={[
@@ -575,7 +578,7 @@ export default function Registration() {
             <Form.Item
               name="document_type"
               label="Document turi"
-              className="col-span-2"
+              className="md:col-span-2 col-span-6"
             >
               <Select
                 className="w-full  !h-[40px]"
@@ -595,15 +598,26 @@ export default function Registration() {
           {/* pasport  */}
           {docType === "pasport" ? (
             <div>
-              <h4 className="text-[16px] font-[500] mb-2">Pasport</h4>
+              <h4 className="md:text-[16px] text-[14px] font-[500] mb-2">
+                Pasport
+              </h4>
               <div className="grid grid-cols-7 gap-3">
-                <Form.Item name={["pasport", "series"]} className="col-span-1">
+                <Form.Item
+                  name={["pasport", "series"]}
+                  className="md:col-span-1 col-span-7"
+                >
                   <Input placeholder="Seriasi" className="w-full !h-[40px]" />
                 </Form.Item>
-                <Form.Item name={["pasport", "number"]} className="col-span-3">
+                <Form.Item
+                  name={["pasport", "number"]}
+                  className="md:col-span-3 col-span-7"
+                >
                   <Input placeholder="Raqami" className="w-full !h-[40px]" />
                 </Form.Item>
-                <Form.Item name={["pasport", "jshr"]} className="col-span-3">
+                <Form.Item
+                  name={["pasport", "jshr"]}
+                  className="md:col-span-3 col-span-7"
+                >
                   <Input
                     placeholder="JSHR raqami"
                     className="w-full !h-[40px]"
@@ -613,7 +627,7 @@ export default function Registration() {
               <div className="grid grid-cols-6 gap-3">
                 <Form.Item
                   name={["pasport", "issued_by"]}
-                  className="col-span-2"
+                  className="md:col-span-2 col-span-6"
                 >
                   <Input
                     placeholder="Kim tomonidan berilgan"
@@ -622,13 +636,13 @@ export default function Registration() {
                 </Form.Item>
                 <Form.Item
                   name={["pasport", "issued_date"]}
-                  className="col-span-2"
+                  className="md:col-span-2 col-span-6"
                 >
                   <DatePicker className="w-full !h-[40px]" />
                 </Form.Item>
                 <Form.Item
                   name={["pasport", "expiry_date"]}
-                  className="col-span-2"
+                  className="md:col-span-2 col-span-6"
                 >
                   <DatePicker className="w-full !h-[40px]" />
                 </Form.Item>
@@ -636,15 +650,26 @@ export default function Registration() {
             </div>
           ) : docType === "idcard" ? (
             <div>
-              <h4 className="text-[16px] font-[500] mb-2">Id Carta</h4>
+              <h4 className="md:text-[16px] text-[14px] font-[500] mb-2">
+                Id Carta
+              </h4>
               <div className="grid grid-cols-7 gap-3">
-                <Form.Item name={["idcard", "series"]} className="col-span-1">
+                <Form.Item
+                  name={["idcard", "series"]}
+                  className="md:col-span-1 col-span-7"
+                >
                   <Input placeholder="Seriasi" className="w-full !h-[40px]" />
                 </Form.Item>
-                <Form.Item name={["idcard", "number"]} className="col-span-3">
+                <Form.Item
+                  name={["idcard", "number"]}
+                  className="md:col-span-3 col-span-7"
+                >
                   <Input placeholder="Raqami" className="w-full !h-[40px]" />
                 </Form.Item>
-                <Form.Item name={["idcard", "jshr"]} className="col-span-3">
+                <Form.Item
+                  name={["idcard", "jshr"]}
+                  className="md:col-span-3 col-span-7"
+                >
                   <Input
                     placeholder="JSHR raqami"
                     className="w-full !h-[40px]"
@@ -654,7 +679,7 @@ export default function Registration() {
               <div className="grid grid-cols-6 gap-3">
                 <Form.Item
                   name={["idcard", "issued_by"]}
-                  className="col-span-2"
+                  className="md:col-span-2 col-span-6"
                 >
                   <Input
                     placeholder="Kim tomonidan berilgan"
@@ -663,13 +688,13 @@ export default function Registration() {
                 </Form.Item>
                 <Form.Item
                   name={["idcard", "issued_date"]}
-                  className="col-span-2"
+                  className="md:col-span-2 col-span-6"
                 >
                   <DatePicker className="w-full !h-[40px]" />
                 </Form.Item>
                 <Form.Item
                   name={["idcard", "expiry_date"]}
-                  className="col-span-2"
+                  className="md:col-span-2 col-span-6"
                 >
                   <DatePicker className="w-full !h-[40px]" />
                 </Form.Item>
@@ -677,13 +702,13 @@ export default function Registration() {
             </div>
           ) : docType === "driver_license" ? (
             <div>
-              <h4 className="text-[16px] font-[500] mb-2">
+              <h4 className="md:text-[16px] text-[14px] font-[500] mb-2">
                 Haydovchilik guvohnomasi
               </h4>
               <div className="grid grid-cols-6 gap-3">
                 <Form.Item
                   name={["driver_license", "number"]}
-                  className="col-span-3"
+                  className="md:col-span-3 col-span-6"
                 >
                   <Input
                     placeholder="Card number"
@@ -692,7 +717,7 @@ export default function Registration() {
                 </Form.Item>
                 <Form.Item
                   name={["driver_license", "jshr"]}
-                  className="col-span-3"
+                  className="md:col-span-3 col-span-6"
                 >
                   <Input
                     placeholder="Card JSHR"
@@ -707,33 +732,51 @@ export default function Registration() {
         </div>
 
         <div className="px-[24px] pb-4">
-          <h3 className="text-[18px] font-[600]">Qo'shimcha ma'lumotlar</h3>
+          <h3 className="md:text-[18px] text-[14px] font-[600]">
+            Qo'shimcha ma'lumotlar
+          </h3>
           <div className="grid grid-cols-6 gap-3">
-            <Form.Item name="country" label="Davlati" className="col-span-2">
+            <Form.Item
+              name="country"
+              label="Davlati"
+              className="md:col-span-2 col-span-6"
+            >
               <Input className="w-full !h-[40px]" />
             </Form.Item>
-            <Form.Item name="region" label="Shahar" className="col-span-2">
+            <Form.Item
+              name="region"
+              label="Shahar"
+              className="md:col-span-2 col-span-6"
+            >
               <Input className="w-full  !h-[40px]" />
             </Form.Item>
             <Form.Item
               name="address"
               label="Tuman, qishloq"
-              className="col-span-2"
+              className="md:col-span-2 col-span-6"
             >
               <Input className="w-full  !h-[40px]" />
             </Form.Item>
 
-            <Form.Item name="height" label="Bo'yi" className="col-span-2">
+            <Form.Item
+              name="height"
+              label="Bo'yi"
+              className="md:col-span-2 col-span-6"
+            >
               <Input className="w-full  !h-[40px]" />
             </Form.Item>
-            <Form.Item name="weight" label="Og'irligi" className="col-span-2">
+            <Form.Item
+              name="weight"
+              label="Og'irligi"
+              className="md:col-span-2 col-span-6"
+            >
               <Input className="w-full  !h-[40px]" />
             </Form.Item>
           </div>
-          <div className="px-[24px] pb-4 flex gap-4 justify-end">
+          <div className="md:px-[24px] pb-4 flex gap-4 justify-end">
             <button
               onClick={() => form.resetFields()}
-              className="px-[30px] bg-[#d7d7d753] py-2.5 rounded-md text-black font-[500] cursor-pointer"
+              className="md:px-[30px] bg-[#d7d7d753] py-2.5 text-[12px] md:text-[16px] rounded-md text-black font-[500] cursor-pointer"
               type="button"
             >
               Formani tozalash
@@ -745,7 +788,7 @@ export default function Registration() {
                     setSelectedPatientId(null),
                     setIsFormDisabled(false);
                 }}
-                className="px-[30px]  bg-[#d7d7d753] py-2.5 rounded-md text-black font-[500] cursor-pointer  flex justify-center items-center"
+                className="md:px-[30px]  bg-[#d7d7d753] py-2.5 text-[12px] md:text-[16px] rounded-md text-black font-[500] cursor-pointer  flex justify-center items-center"
                 type="button"
               >
                 Yangi bemor qo'shish
@@ -754,14 +797,14 @@ export default function Registration() {
             {isFormDisabled ? (
               <div
                 onClick={() => setIsFormDisabled(false)}
-                className="px-[30px]  bg-[#2B7FFF] rounded-md text-white font-[500] cursor-pointer !w-[150px] flex justify-center items-center"
+                className="md:px-[30px]  bg-[#2B7FFF] rounded-md text-[12px] md:text-[16px] text-white font-[500] cursor-pointer !w-[150px] flex justify-center items-center"
               >
                 O'zgartirish
               </div>
             ) : (
               <button
                 type="submit"
-                className="px-[30px] !h-[40px] bg-[#2B7FFF] rounded-md text-white font-[500] cursor-pointer !w-[150px] flex justify-center items-center"
+                className="md:px-[30px] !h-[40px] bg-[#2B7FFF] text-[12px] md:text-[16px] rounded-md text-white font-[500] cursor-pointer !w-[150px] flex justify-center items-center"
               >
                 {selectedPatientId ? (
                   addPatientLoading || updatePatientLoading ? (
@@ -784,11 +827,11 @@ export default function Registration() {
 
       {selectedPatientId ? (
         <div className=" border md:w-full w-full border-[#e3e3e3] rounded-[20px] px-[24px] py-[10px] mt-4 mb-5">
-          <h3 className="text-[18px] font-[600] mt-4">
+          <h3 className="md:text-[18px] text-[14px] font-[600] mt-4">
             Bemorni shifokorga biriktirish
           </h3>
           <div className="grid grid-cols-6 gap-3 mt-2">
-            <div className="flex flex-col gap-1 col-span-2">
+            <div className="flex flex-col gap-1 md:col-span-2 col-span-6">
               <label className="text-sm">Shifokor</label>
               <Select
                 className="w-full !h-[40px]"
@@ -799,7 +842,7 @@ export default function Registration() {
             </div>
 
             {handleSelectDoctorState && (
-              <div className="flex flex-col gap-1 col-span-2">
+              <div className="flex flex-col gap-1 md:col-span-2 col-span-6">
                 <label className="text-sm ">Servislar</label>
                 <TreeSelect
                   showSearch
@@ -818,7 +861,7 @@ export default function Registration() {
               </div>
             )}
           </div>
-          <div className="px-[24px] pb-4 flex gap-4 justify-end">
+          <div className="px-[24px] pb-4 flex gap-4 justify-end mt-3 md:mt-auto">
             <button
               onClick={handleDoctorSubmit}
               className="px-[30px] !h-[40px] text-[14px] bg-[#2B7FFF] rounded-md text-white font-[500] cursor-pointer !w-[150px] flex justify-center items-center"

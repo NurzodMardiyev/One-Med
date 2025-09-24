@@ -35,8 +35,13 @@ export default function SidebarRegister() {
   const handleEventLogOut = (e: { key: string }) => {
     navigate(e.key, { replace: true });
   };
+  const currentPath = location.pathname.split("/")[2] || "registration";
   return (
-    <div className="min-h-screen w-[300px] flex flex-col">
+    <div
+      className={`min-h-screen ${
+        collapsed ? "w-[80px]" : "w-[300px]"
+      }  flex flex-col`}
+    >
       <div className="mb-4">
         <Menu
           onClick={handleEvent}
@@ -56,11 +61,11 @@ export default function SidebarRegister() {
       </div>
       <Menu
         onClick={handleEvent}
-        defaultSelectedKeys={[location.pathname.slice(10)]}
+        defaultSelectedKeys={[currentPath]}
         mode="inline"
         inlineCollapsed={collapsed}
         items={items}
-        className="!border-none"
+        className="!border-none flex-1 !pt-4"
       />
       <Menu
         onClick={handleEventLogOut}

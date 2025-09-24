@@ -1,4 +1,10 @@
-import { createContext, ReactNode, useContext, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { useQuery } from "react-query";
 import { UserProfileResponse } from "../pages/Settings";
 import { OneMedAdmin } from "../queries/query";
@@ -47,6 +53,22 @@ export default function ContextApiProvider({
     username: "",
   });
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setCollapsed(true); // md dan kichik bo‘lsa
+      } else {
+        setCollapsed(false); // md dan katta bo‘lsa
+      }
+    };
+
+    // birinchi renderda ham tekshiradi
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const accessToken = SecureStorage.getItem("accessToken");
 
   // Queru orqali user profile malumotlarini olish
@@ -58,7 +80,6 @@ export default function ContextApiProvider({
     cacheTime: Infinity,
   });
 
-  console.log(getUserProfileData);
   return (
     <CreateContProvider.Provider
       value={{

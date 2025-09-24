@@ -304,14 +304,14 @@ export default function EmployeeInfo() {
   // const takeServicesFromBack = () => setEnable(true);
 
   return (
-    <div>
+    <div className="pr-[10px] md:pr-auto">
       <div className="flex items-center justify-between my-4">
         {/* Orqaga qaytish */}
         {contextHolder}
         <div className="flex items-center gap-4">
           <Link
             to="/employees"
-            className="flex items-center gap-1 px-6 py-2.5 text-[14px] font-[500] rounded-md hover:bg-[#E6F4FF]"
+            className=" items-center hidden md:flex gap-1 px-6 py-2.5 text-[14px] font-[500] rounded-md hover:bg-[#E6F4FF]"
           >
             <IoMdArrowBack className="text-[16px]" />
             Orqaga
@@ -320,10 +320,10 @@ export default function EmployeeInfo() {
           {/* Patient ismi + avatar */}
           <div className="flex items-center gap-3">
             <div>
-              <h2 className="text-[22px] font-[600] mb-[-5px]">
+              <h2 className="md:text-[22px] text-[18px] font-[600] mb-[-5px]">
                 Doctor ma'lumotlari
               </h2>
-              <p className="text-[#9D99AB] font-[300] text-[14px]">
+              <p className="text-[#9D99AB] font-[300] md:text-[14px] text-[12px]">
                 To'liq ma'lumot va jadval
               </p>
             </div>
@@ -331,19 +331,19 @@ export default function EmployeeInfo() {
         </div>
 
         {/* Edit tugmasi */}
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-col-reverse md:flex-row">
           <button
             onClick={showModalPassword}
-            className="cursor-pointer text-yellow-500 border-yellow-500 px-6 py-2 border  rounded-md text-[14px] flex gap-2 hover:bg-[#ffbc1218] transition-all duration-150"
+            className="cursor-pointer text-yellow-500 border-yellow-500 md:px-6 px-3 md:py-2 py-1.5 border  rounded-md md:text-[14px] text-[12px] flex md:gap-2 hover:bg-[#ffbc1218] transition-all duration-150"
           >
-            <BiSolidEditAlt className="text-[18px]" />
+            <BiSolidEditAlt className="md:text-[18px] text-[16px]" />
             Parolini o'zgartirish
           </button>
           <button
             onClick={showModal}
-            className="cursor-pointer text-blue-500 border-blue-500 px-6 py-2 border  rounded-md text-[14px] flex gap-2 hover:bg-[#E6F4FF] transition-all duration-150"
+            className="cursor-pointer text-blue-500 border-blue-500 md:px-6 px-3 md:py-2 py-1.5 border  rounded-md md:text-[14px] text-[12px flex md:gap-2 hover:bg-[#E6F4FF] transition-all duration-150"
           >
-            <BiSolidEditAlt className="text-[18px]" />
+            <BiSolidEditAlt className="md:text-[18px] text-[16px]" />
             Tahrirlash
           </button>
 
@@ -553,20 +553,20 @@ export default function EmployeeInfo() {
 
       {/* Body qism */}
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-4">
+        <div className="md:col-span-4 col-span-12">
           <div className="border bg-[#fff] border-[#E8E8E8]  rounded-[10px]">
             <div className="bg-[#1173D4] rounded-t-[10px] px-[20px] py-[25px]">
-              <h4 className="text-[20px] font-[600] text-white">
+              <h4 className="md:text-[20px] text-[16px] font-[600] text-white">
                 {employeeData?.data.fio}
               </h4>
-              <p className="text-[20px] font-[500] text-white/40">
+              <p className="md:text-[20px] text-[16px] font-[500] text-white/40">
                 ID: {employeeData?.data.username}
               </p>
-              <span className="inline-flex items-center mt-2 text-white px-[10px] py-[4px] gap-1 rounded-xl bg-[#418FDD]">
+              <span className="inline-flex items-center mt-2 md:text-[16px] text-[14px] text-white px-[10px] py-[4px] gap-1 rounded-xl bg-[#418FDD]">
                 {" "}
                 <FaStethoscope /> roles.{employeeData?.data.role}
               </span>
-              <div className="text-white mt-2">
+              <div className="md:text-[16px] text-[14px] text-white mt-2">
                 <span className="flex items-center gap-1">
                   <PiMedalLight /> tajriba
                 </span>
@@ -578,15 +578,19 @@ export default function EmployeeInfo() {
                   <LuUser />
                 </div>
                 <div>
-                  <h5 className="font-[600] text-[18px] mt-1">Mutahasislik</h5>
+                  <h5 className="font-[600] md:text-[18px] text-[16px] mt-1">
+                    Mutahasislik
+                  </h5>
                   <div className="flex flex-col gap-2.5 mt-4">
                     <div>
-                      <span className="uppercase text-[#8FA9C7]">BOLIM</span>
+                      <span className="uppercase md:text-[16px] text-[14px] text-[#8FA9C7]">
+                        BOLIM
+                      </span>
                       {employeeData?.data?.doctor?.categories?.map((item) => (
                         <div key={item.id}>
                           <p className="font-[600]">{item.name}</p>
 
-                          <span className="uppercase mt-2 inline-block text-[#8FA9C7]">
+                          <span className="uppercase mt-2 text-[14px] md:text-[16px] inline-block text-[#8FA9C7]">
                             Servis
                           </span>
 
@@ -606,11 +610,15 @@ export default function EmployeeInfo() {
                   <BsTelephone />
                 </div>
                 <div className="w-full">
-                  <h5 className="font-[600] text-[18px] mt-1">Bog'lanish</h5>
+                  <h5 className="font-[600] md:text-[18px] text-[16px] mt-1">
+                    Bog'lanish
+                  </h5>
                   <div className="border border-[#d4d4d4] rounded-xl flex items-center py-3 px-4 !w-full bg-[#EFFBF6] gap-4 mt-4">
                     <BsTelephone className="text-[17px]" />
                     <div className="">
-                      <span className="uppercase text-[#8FA9C7]">Telefon</span>
+                      <span className="uppercase md:text-[16px] text-[14px] text-[#8FA9C7]">
+                        Telefon
+                      </span>
                       <p className="font-[600]">{employeeData?.data.phone}</p>
                     </div>
                   </div>
@@ -619,11 +627,13 @@ export default function EmployeeInfo() {
             </div>
           </div>
         </div>
-        <div className="col-span-8">
+        <div className="md:col-span-8 col-span-12">
           <div className="border bg-[#fff] border-[#E8E8E8] p-[25px] rounded-[10px] mb-4">
             <div className="mb-2">
-              <h3 className="text-[#0079f3]">Kunlik qabul qilingan bemorlar</h3>
-              <h2 className="text-[24px] font-[600]">
+              <h3 className="text-[#0079f3] text-[14px] md:text-[16px]">
+                Kunlik qabul qilingan bemorlar
+              </h3>
+              <h2 className="md:text-[24px] text-[20px] font-[600]">
                 {employeeData?.data?.doctor?.patients_stats?.daily_stats.reduce(
                   (acc, item) => acc + Number(item.patient_count),
                   0
@@ -682,10 +692,10 @@ export default function EmployeeInfo() {
 
           <div className="border bg-[#fff] border-[#E8E8E8] p-[25px] rounded-[10px]">
             <div className="mb-2">
-              <h3 className="text-[#0079f3]">
+              <h3 className="text-[#0079f3] text-[14px] md:text-[16px">
                 Shifokor keltirgan kunlik tushum
               </h3>
-              <h2 className="text-[24px] font-[600]">
+              <h2 className="md:text-[24px] text-[20px] font-[600]">
                 {employeeData?.data?.doctor?.patients_stats?.daily_stats.reduce(
                   (acc, item) => acc + Number(item.revenue.toFixed(1)),
                   0

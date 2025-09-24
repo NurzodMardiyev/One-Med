@@ -191,30 +191,32 @@ export default function Employees() {
     );
   }
   return (
-    <div>
+    <div className="pr-[10px] md:pr-auto">
       {contextHolder}
       {/* Header */}
       <div className="flex items-center justify-between mt-[30px]">
         <div>
-          <h1 className="text-[22px] font-[600]">Xodimlar boshqaruvi</h1>
-          <p className="text-[#8F99A3]">
+          <h1 className="md:text-[22px] text-[18px] font-[600]">
+            Xodimlar boshqaruvi
+          </h1>
+          <p className="text-[14px] md:text-[16px] text-[#8F99A3]">
             Klinika xodimlari va ularning jadvallarini boshqarish
           </p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex gap-2 items-center py-2 px-4 rounded-md text-white cursor-pointer bg-[#2B7FFF]"
+          className="flex gap-2 text-[14px] md:text-[16px] items-center py-2 px-4 rounded-md text-white cursor-pointer bg-[#2B7FFF]"
         >
-          <FiPlus className="text-[20px]" />
+          <FiPlus className="md:text-[20px] text-[14px] hidden md:block" />
           Xodim qo'shish
         </button>
       </div>
 
       {/* Search + filter */}
-      <div className="px-6 py-6 border border-[#E0E6EB] rounded-[10px] flex items-center gap-3 mt-4">
+      <div className="px-6 py-6 border border-[#E0E6EB] rounded-[10px] flex md:flex-row flex-col items-center gap-3 mt-4">
         <Form
           onFinish={(values) => setSearch(values.search)}
-          className="flex-1"
+          className="flex-1 w-full"
         >
           <Form.Item name="search" className="!m-0 relative">
             <div>
@@ -258,12 +260,14 @@ export default function Employees() {
               className="px-6 py-4 border border-[#E0E6EB] flex items-center justify-between rounded-[10px] bg-[#fff] mb-3"
             >
               <div className="flex items-center gap-3">
-                <div className="w-[50px] h-[50px] flex justify-center items-center rounded-full bg-[#E7F0FA] text-[#2A81D8] text-[24px]">
+                <div className="md:w-[50px] md:h-[50px] w-[35px] h-[35px] flex justify-center items-center rounded-full bg-[#E7F0FA] text-[#2A81D8] md:text-[24px] text-[20px]">
                   <LuUser />
                 </div>
                 <div>
-                  <h3 className="text-[18px] font-[600]">{item.fio}</h3>
-                  <p className="text-[14px] text-[#8b8b8b] flex gap-2">
+                  <h3 className="md:text-[18px] text-[14px] font-[600]">
+                    {item.fio}
+                  </h3>
+                  <p className="md:text-[14px] text-[12px] text-[#8b8b8b] flex gap-2">
                     <BsTelephone /> {item.phone}
                   </p>
                 </div>

@@ -5,7 +5,10 @@ import { Dayjs } from "dayjs";
 import { EmployeeData, EmployeeResponse } from "../components/EmployeeInfo";
 import { UpdateProfilePayload, UserProfileResponse } from "../pages/Settings";
 
-export const baseApi = "https://api.bm.one-med.uz";
+// https://api.babyortomed.one-med.uz
+// https://api.bm.one-med.uz    /// ----- Andijondagi med klinika uchun
+// https://api.titan-renesans.one-med.uz     /// ---- titan renasans klinikasi uchun
+export const baseApi = import.meta.env.BASE_URL;
 
 type ServiceItem = {
   id: string;
@@ -727,15 +730,22 @@ tringleData: async (type: string)=> {
   return response.data
 },
 
-checkUserValue: async (value: string): Promise<{ is_exists: boolean }> => {
-  const response = await api.get(
-    `${baseApi}/v1/users/check?value=${encodeURIComponent(value)}`,
+// OneMedAdmin ichida
+statusPatch: async (
+  id: string,
+  visitId: string,
+  obj: { status: string }
+): Promise<any> => {
+  const response = await api.patch(
+    `${baseApi}/v1/patients/${id}/visits/${visitId}`,
+    obj,
     {
       headers: {
         "Content-Type": "application/json",
       },
     }
   );
-  return response.data.data; // <-- faqat data ichidagi objectni qaytaramiz
+  return response.data;
 },
+
 }
