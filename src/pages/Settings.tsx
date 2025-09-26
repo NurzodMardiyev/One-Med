@@ -610,6 +610,8 @@ export default function Settings() {
     });
   };
 
+  const [newServices, setNewServices] = useState(false);
+
   return (
     <div className="pr-[10px] md:pr-auto">
       {contextHolder}
@@ -1101,6 +1103,7 @@ export default function Settings() {
                     className="!w-full"
                     onFinish={(values) => {
                       console.log("Yangi servislar:", values);
+
                       addServicesMutate({
                         category: checkAddCategoryName?.id!,
                         services: values.newServices, // alohida field
@@ -1136,17 +1139,33 @@ export default function Settings() {
                             </Form.Item>
                           ))}
 
-                          <Button onClick={() => add()} block>
+                          <Button
+                            onClick={() => {
+                              add();
+                              setNewServices(true);
+                            }}
+                            block
+                          >
                             + Servis qo‘shish
                           </Button>
 
-                          <Button
-                            className="!bg-[#4D94FF] hover:!bg-[#2B7FFF] !h-[40px] !text-white"
-                            htmlType="submit"
-                            block
-                          >
-                            + Yangi servislarni yuborish
-                          </Button>
+                          {newServices && (
+                            <Button
+                              className="!bg-[#4D94FF] hover:!bg-[#2B7FFF] !h-[40px] !text-white"
+                              htmlType="submit"
+                              block
+                            >
+                              {addServicesLoading ? (
+                                <Spin
+                                  className="!text-[#fff]"
+                                  indicator={<LoadingOutlined spin />}
+                                />
+                              ) : (
+                                "+"
+                              )}{" "}
+                              Yangi servislarni yuborish
+                            </Button>
+                          )}
                         </div>
                       )}
                     </Form.List>

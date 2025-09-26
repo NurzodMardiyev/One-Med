@@ -124,6 +124,7 @@ export default function Employees() {
             value: `cat-${category.id}`,
             title: category.name,
             selectable: false,
+            disabled: category.services.length === 0,
             children: category.services.map((srv) => ({
               value: `${srv.id}`,
               title: <div>{srv.name}</div>,
@@ -417,35 +418,43 @@ export default function Employees() {
               </Form.Item>
 
               {showService && (
-                <Form.Item name={["doctor", "services"]} label="Servislar">
-                  <TreeSelect
-                    onClick={takeServicesFromBack}
-                    showSearch
-                    style={{ width: "100%" }}
-                    multiple
-                    placeholder="Please select"
-                    allowClear
-                    treeCheckable
-                    onPopupScroll={handlePopupScroll}
-                    treeDefaultExpandAll
-                    showCheckedStrategy={TreeSelect.SHOW_CHILD}
-                    onChange={(v) => console.log(v)}
-                    treeData={treeData2}
-                    popupRender={(menu) => (
-                      <>
-                        {menu}
-                        {isFetching && hasMore && (
-                          <div style={{ textAlign: "center", padding: 8 }}>
-                            <Spin
-                              indicator={<LoadingOutlined spin />}
-                              size="small"
-                            />
-                          </div>
-                        )}
-                      </>
-                    )}
-                  />
-                </Form.Item>
+                <>
+                  <Form.Item name={["doctor", "services"]} label="Servislar">
+                    <TreeSelect
+                      onClick={takeServicesFromBack}
+                      showSearch
+                      style={{ width: "100%" }}
+                      multiple
+                      placeholder="Please select"
+                      allowClear
+                      treeCheckable
+                      onPopupScroll={handlePopupScroll}
+                      treeDefaultExpandAll
+                      showCheckedStrategy={TreeSelect.SHOW_CHILD}
+                      onChange={(v) => console.log(v)}
+                      treeData={treeData2}
+                      popupRender={(menu) => (
+                        <>
+                          {menu}
+                          {isFetching && hasMore && (
+                            <div style={{ textAlign: "center", padding: 8 }}>
+                              <Spin
+                                indicator={<LoadingOutlined spin />}
+                                size="small"
+                              />
+                            </div>
+                          )}
+                        </>
+                      )}
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    name={["doctor", "room_number"]}
+                    label="Xona raqami"
+                  >
+                    <Input type="number" />
+                  </Form.Item>
+                </>
               )}
 
               <Form.Item

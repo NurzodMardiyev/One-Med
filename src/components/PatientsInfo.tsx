@@ -354,7 +354,8 @@ export default function PatientsInfo() {
     ? categories.map((category: Category) => ({
         value: category.id,
         title: category.name,
-        selectable: false,
+        disabled: category.services.length === 0,
+        selectable: false, // parent tanlanmaydi
         children: category.services.map((srv: Service) => ({
           value: srv.id,
           title: srv.name,
@@ -722,7 +723,7 @@ export default function PatientsInfo() {
                     autoComplete="off"
                   >
                     {/* Avval mavjud retseptlar */}
-                    {(visitRecipes?.data?.recipes?.length ?? 0) > 0 && (
+                    {(visitRecipes?.data?.recipes?.length ?? 0) > 0 ? (
                       <div className="mb-6">
                         <h3 className="text-[16px] font-semibold mb-3">
                           📋 Mavjud retseptlar
@@ -750,6 +751,8 @@ export default function PatientsInfo() {
                           )}
                         </div>
                       </div>
+                    ) : (
+                      <Empty />
                     )}
 
                     {/* Yangi retsept qo'shish formi */}
@@ -849,6 +852,15 @@ export default function PatientsInfo() {
                     const formatted = dayjs(item.created_at).format(
                       "YYYY-MM-DD HH:mm"
                     );
+
+                    const status =
+                      item.status === "pending"
+                        ? "Kutilmoqda"
+                        : item.status === "in_progress"
+                        ? "Jarayonda"
+                        : item.status === "cancelled"
+                        ? "Bekor qilingan"
+                        : "Tekshirilgan";
                     return (
                       <div
                         key={item.id}
@@ -880,7 +892,7 @@ export default function PatientsInfo() {
                                   : "bg-[#2ef6a3]"
                               } px-3 py-0.5 text-white rounded-[4px]`}
                             >
-                              {item.status}
+                              {status}
                             </div>
                           </li>
                           <li className="flex items-center md:text-[14px] text-[12px] gap-2 text-[#676767]">

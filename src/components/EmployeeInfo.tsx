@@ -27,6 +27,7 @@ import {
   notification,
   Card,
 } from "antd";
+import { BsDoorOpen } from "react-icons/bs";
 import { useEffect, useState } from "react";
 import { LoadingOutlined } from "@ant-design/icons";
 
@@ -60,6 +61,7 @@ export interface DoctorInfo {
   categories: Category[];
   experience_year: number | null;
   patients_stats: PatientsStats;
+  room_number: number;
 }
 
 export interface EmployeeData {
@@ -287,6 +289,7 @@ export default function EmployeeInfo() {
           value: `${category.id}`, // value ham unique
           title: category.name,
           selectable: false,
+          disabled: category.services.length === 0,
           children: category.services.map((srv) => ({
             key: srv.id, // ✅ endi bir xil
             value: srv.id,
@@ -622,6 +625,20 @@ export default function EmployeeInfo() {
                       <p className="font-[600]">{employeeData?.data.phone}</p>
                     </div>
                   </div>
+
+                  {employeeData?.data?.doctor?.room_number && (
+                    <div className="border border-[#d4d4d4] rounded-xl flex items-center py-3 px-4 !w-full bg-[#effafb] gap-4 mt-4">
+                      <BsDoorOpen className="text-[17px]" />
+                      <div className="">
+                        <span className="uppercase md:text-[16px] text-[14px] text-[#8fc4c7]">
+                          Xona raqami
+                        </span>
+                        <p className="font-[600]">
+                          {employeeData?.data?.doctor?.room_number}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

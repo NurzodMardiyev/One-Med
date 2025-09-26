@@ -8,7 +8,8 @@ import { UpdateProfilePayload, UserProfileResponse } from "../pages/Settings";
 // https://api.babyortomed.one-med.uz
 // https://api.bm.one-med.uz    /// ----- Andijondagi med klinika uchun
 // https://api.titan-renesans.one-med.uz     /// ---- titan renasans klinikasi uchun
-export const baseApi = import.meta.env.BASE_URL;
+// https://api.nerolife.one-med.uz   /// 8083
+export const baseApi = "https://api.babyortomed.one-med.uz";
 
 type ServiceItem = {
   id: string;
@@ -20,10 +21,6 @@ type ServiceItem = {
     name: string,
     services: ServiceItem[]
   }
-
-
-
-
 
 type pasport = {
   series: string;

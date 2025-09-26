@@ -530,7 +530,6 @@ export default function Registration() {
               name="blood_group"
               label="Qon guruhi"
               className="md:col-span-2 col-span-6"
-              rules={[{ required: true, message: "Qon guruhi kiriting" }]}
             >
               <Select
                 className="w-full  !h-[40px]"
