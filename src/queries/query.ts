@@ -9,7 +9,17 @@ import { UpdateProfilePayload, UserProfileResponse } from "../pages/Settings";
 // https://api.bm.one-med.uz    /// ----- Andijondagi med klinika uchun
 // https://api.titan-renesans.one-med.uz     /// ---- titan renasans klinikasi uchun
 // https://api.nerolife.one-med.uz   /// 8083
-export const baseApi = "https://api.babyortomed.one-med.uz";
+
+
+// Apilar va versiyalar
+const  baby = "https://api.babyortomed.one-med.uz"
+const  bm = "https://api.bm.one-med.uz"
+const titan = "https://api.titan-renesans.one-med.uz"
+const nero = "https://api.nerolife.one-med.uz"
+
+export const baseApi = baby;
+
+console.log(baby, bm, titan, nero)
 
 type ServiceItem = {
   id: string;
@@ -346,6 +356,11 @@ export interface ChangePasswordResponse {
   success: boolean;
   message: string;
 }
+
+export type DeleteResponse = {
+  message?: string;
+  success?: boolean;
+};
 
 export const OneMedAdmin = {
   authLogin: async (obj:{phone: string, password: string}) => {
@@ -745,4 +760,13 @@ statusPatch: async (
   return response.data;
 },
 
+deletePatient: async (id: string): Promise<DeleteResponse> => {
+  const response = await api.delete(`${baseApi}/v1/patients/${id}`);
+  return response.data || { message: "Deleted successfully", success: true };
+},
+
+deleteEmployee: async (id: string): Promise<DeleteResponse> => {
+  const response = await api.delete(`${baseApi}/v1/users/${id}`);
+  return response.data || { message: "Deleted successfully", success: true };
+},
 }

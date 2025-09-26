@@ -165,6 +165,13 @@ export default function Settings() {
           setCheckCategoryName(data.data);
           setDeleteBool(false);
         },
+        onError: () => {
+          openNotificationWithIcon(
+            "error",
+            "Xatolik yuz berdi!",
+            "Bu kategoriya bazada bo'lishi mumkin iltimos qaytadan urinib ko'ring!"
+          );
+        },
       }
     );
 
@@ -203,6 +210,13 @@ export default function Settings() {
 
           // ✅ Sahifani refresh qilish
           // window.location.reload();
+        },
+        onError: () => {
+          openNotificationWithIcon(
+            "error",
+            "Xatolik yuz berdi!",
+            "Iltimos qaytadan urinib ko'ring!"
+          );
         },
       }
     );
@@ -381,6 +395,7 @@ export default function Settings() {
             id: cat.id,
             pId: 0,
             value: cat.id,
+            key: cat.id,
             title: cat.name,
             selectable: true,
           };
@@ -388,6 +403,7 @@ export default function Settings() {
           const serviceNodes = cat.services.map((srv) => ({
             id: srv.id,
             pId: cat.id,
+            key: cat.id,
             value: srv.id,
             title: `${srv.name} - ${srv.price} so'm`,
             selectable: false,
@@ -512,6 +528,7 @@ export default function Settings() {
 
   const handleCancel = () => {
     setIsModalOpen(false);
+    setIsEditing(false);
   };
 
   const showModalPass = () => {
@@ -542,6 +559,7 @@ export default function Settings() {
         username: getUserProfileData.data.username,
         phone: getUserProfileData.data.phone,
         role: getUserProfileData.data.role,
+        more: getUserProfileData.data.more,
         doctor: getUserProfileData.data.doctor
           ? {
               experience_year: getUserProfileData.data.doctor.experience_year,
@@ -573,6 +591,7 @@ export default function Settings() {
             "Profil yangilandi",
             "Profil yangilanishi muvaffaqiyatli bo'ldi!"
           );
+          handleCancel();
         },
         onError: (err) => {
           console.error("Update profile error:", err);
@@ -611,6 +630,7 @@ export default function Settings() {
   };
 
   const [newServices, setNewServices] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   return (
     <div className="pr-[10px] md:pr-auto">
@@ -628,14 +648,14 @@ export default function Settings() {
         <div className="flex items-center gap-2 md:flex-row flex-col-reverse">
           <button
             onClick={showModalPass}
-            className="cursor-pointer text-yellow-500 border-yellow-500 md:px-6 px-3 md:py-2 py-1.5 border  rounded-md text-[14px] flex gap-2 hover:bg-[#ffbc1218] transition-all duration-150"
+            className="cursor-pointer hover:shadow-md  text-yellow-500 border-yellow-500 md:px-6 px-3 md:py-2 py-1.5 border  rounded-md text-[14px] flex gap-2 hover:bg-[#ffbc1218] transition-all duration-150"
           >
             Parolni o'zgartirish
           </button>
 
           <button
             onClick={showModal}
-            className="flex gap-2 items-center  md:px-6 px-3 md:py-2 py-1.5 rounded-md text-[14px] text-white cursor-pointer bg-[#2B7FFF]"
+            className="flex gap-2 items-center hover:shadow-md transition-all duration-150  md:px-6 px-3 md:py-2 py-1.5 rounded-md text-[14px] text-white cursor-pointer bg-[#2B7FFF]"
           >
             <FiPlus className="text-[20px]" />
             Accountni sozlash
@@ -696,7 +716,7 @@ export default function Settings() {
               <Button
                 type="primary"
                 htmlType="submit"
-                className="!h-[38px] !py-2.5 !w-full"
+                className="!h-[38px] !py-2.5 !w-full hover:shadow-md transition-all duration-150"
               >
                 {changingPassword ? (
                   <Spin
@@ -714,7 +734,6 @@ export default function Settings() {
 
       <Modal
         title="Admin profilini sozlash"
-        closable={{ "aria-label": "Custom Close Button" }}
         open={isModalOpen}
         onOk={handleOk}
         onCancel={handleCancel}
@@ -734,36 +753,33 @@ export default function Settings() {
                 doctor: values.doctor
                   ? {
                       experience_year: values.doctor.experience_year,
-                      services: values.doctor.services?.map(
-                        (s: any) => s.value
-                      ),
+                      services: values.doctor.services,
                     }
                   : undefined,
               };
 
               console.log("Yuboriladigan payload:", payload);
               updateProfileMutate(payload);
-              // mutation yoki API call shu yerda
             }}
           >
             <Form.Item label="FIO" name="fio">
-              <Input />
+              <Input disabled={!isEditing} />
             </Form.Item>
 
             <Form.Item label="Username" name="username">
-              <Input />
+              <Input disabled={!isEditing} />
             </Form.Item>
 
             <Form.Item label="Phone" name="phone">
-              <Input />
+              <Input disabled={!isEditing} />
             </Form.Item>
 
             <Form.Item label="Role" name="role">
-              <Input />
+              <Input disabled={true} />
             </Form.Item>
 
             <Form.Item label="More" name="more">
-              <Input />
+              <Input disabled={!isEditing} />
             </Form.Item>
 
             {getUserProfileData?.data?.doctor && (
@@ -772,13 +788,14 @@ export default function Settings() {
                   label="Experience Year"
                   name={["doctor", "experience_year"]}
                 >
-                  <Input type="number" />
+                  <Input type="number" disabled={!isEditing} />
                 </Form.Item>
 
                 <Form.Item label="Services" name={["doctor", "services"]}>
                   <Select
                     mode="multiple"
                     placeholder="Xizmatlarni tanlang"
+                    disabled={!isEditing}
                     options={[
                       {
                         label: "Service 1",
@@ -794,21 +811,30 @@ export default function Settings() {
               </>
             )}
 
-            <div className="flex justify-end">
-              <Button
-                type="primary"
-                htmlType="submit"
-                className="!h-[38px] !py-2.5 !w-full"
-              >
-                {updateProfileDataLoading ? (
-                  <Spin
-                    className="!text-white"
-                    indicator={<LoadingOutlined spin />}
-                  />
-                ) : (
-                  "Saqlash"
-                )}
-              </Button>
+            <div className="flex justify-end gap-2">
+              {!isEditing ? (
+                <div
+                  onClick={() => setIsEditing(true)}
+                  className="flex justify-center cursor-pointer items-center !w-full !h-[38px] mt-3 px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg"
+                >
+                  Tahrirlash
+                </div>
+              ) : (
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  className="!h-[38px] !py-2.5 !w-full"
+                >
+                  {updateProfileDataLoading ? (
+                    <Spin
+                      className="!text-white"
+                      indicator={<LoadingOutlined spin />}
+                    />
+                  ) : (
+                    "Saqlash"
+                  )}
+                </Button>
+              )}
             </div>
           </Form>
         </Card>
@@ -838,7 +864,11 @@ export default function Settings() {
                   treeData={treeData}
                   loading={getCatLoading && page === 1} // faqat birinchi page uchun umumiy spin
                   onPopupScroll={handlePopupScroll}
-                  dropdownStyle={{ maxHeight: 300, overflow: "auto" }}
+                  styles={{
+                    popup: {
+                      root: { maxHeight: 300, overflow: "auto" },
+                    },
+                  }}
                   popupRender={(menu) => (
                     <>
                       {menu}
@@ -875,7 +905,7 @@ export default function Settings() {
                     </Form.Item>
 
                     <Form.Item>
-                      <button className="!bg-[#4D94FF] hover:!bg-[#2B7FFF] !h-[40px] !text-white cursor-pointer w-full rounded-md">
+                      <button className="!bg-[#4D94FF] hover:shadow-md transition-all duration-150 hover:!bg-[#2B7FFF] !h-[40px] !text-white cursor-pointer w-full rounded-md">
                         {categoryNameLoading ? (
                           <Spin
                             className="!text-white"
@@ -930,6 +960,7 @@ export default function Settings() {
                           htmlType="button"
                           onClick={handleSaveCategory}
                           loading={updateCategoryLoading}
+                          className="hover:shadow-md transition-all duration-150"
                         >
                           Saqlash
                         </Button>
@@ -937,6 +968,7 @@ export default function Settings() {
                         <Button
                           onClick={handleCategoryEdit}
                           icon={<BiSolidEditAlt />}
+                          className="hover:shadow-md transition-all duration-150"
                         >
                           Tahrirlash
                         </Button>
@@ -1144,6 +1176,7 @@ export default function Settings() {
                               add();
                               setNewServices(true);
                             }}
+                            className="hover:shadow-md transition-all duration-150"
                             block
                           >
                             + Servis qo‘shish
@@ -1151,7 +1184,7 @@ export default function Settings() {
 
                           {newServices && (
                             <Button
-                              className="!bg-[#4D94FF] hover:!bg-[#2B7FFF] !h-[40px] !text-white"
+                              className="!bg-[#4D94FF] hover:!bg-[#2B7FFF] !h-[40px] !text-white hover:shadow-md transition-all duration-150"
                               htmlType="submit"
                               block
                             >
@@ -1253,6 +1286,7 @@ export default function Settings() {
                                         <Button
                                           onClick={() => subOpt.add()}
                                           block
+                                          className="hover:shadow-md transition-all duration-150"
                                         >
                                           + Servis qo'shish
                                         </Button>
@@ -1265,7 +1299,7 @@ export default function Settings() {
 
                             {checkAddCategoryName && closeCat ? (
                               <Button
-                                className="!bg-[#4D94FF] hover:!bg-[#2B7FFF] !h-[40px] !text-white"
+                                className="!bg-[#4D94FF] hover:!bg-[#2B7FFF] !h-[40px] !text-white hover:shadow-md transition-all duration-150"
                                 htmlType="submit"
                                 block
                               >
@@ -1280,7 +1314,7 @@ export default function Settings() {
                               </Button>
                             ) : !closeCat ? (
                               <Button
-                                className="!bg-[#4D94FF] hover:!bg-[#2B7FFF] !h-[40px] !text-white"
+                                className="!bg-[#4D94FF] hover:!bg-[#2B7FFF] !h-[40px] !text-white hover:shadow-md transition-all duration-150"
                                 htmlType="button"
                                 block
                                 onClick={() => {

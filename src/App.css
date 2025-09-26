@@ -37,3 +37,6 @@ svg:focus {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+.remove-required .ant-form-item-label > label.ant-form-item-required::before {
+  display: none !important;
+}

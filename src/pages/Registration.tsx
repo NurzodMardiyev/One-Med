@@ -53,7 +53,7 @@ type Service = {
   price: number;
 };
 
-type PatientOption = {
+export type PatientOption = {
   key: string;
   value: string;
   label: React.ReactNode;
@@ -72,7 +72,7 @@ type DriverLicense = {
   jshr: string;
 };
 
-type Patient = {
+export type Patient = {
   id: string;
   first_name: string;
   last_name: string;
@@ -95,17 +95,17 @@ type Patient = {
   created_at: string;
   updated_at: string;
 };
-type PatientSelectResponse = {
+export type PatientSelectResponse = {
   success: boolean;
   data: Patient; // bunda date_of_birth, pasport.issued_date ham string edi
 };
 
-type PatientResponse = {
+export type PatientResponse = {
   success: boolean;
   message: string;
   data: Patient;
 };
-type PatientRequest = Omit<
+export type PatientRequest = Omit<
   sendResponseValuesType,
   "date_of_birth" | "pasport" | "idcard"
 > & {
@@ -522,10 +522,10 @@ export default function Registration() {
               name="phone"
               label="Telefon raqam"
               className="md:col-span-2 col-span-6"
-              rules={[{ required: true, message: "Telefon raqam kiriting" }]}
             >
-              <Input className="w-full  !h-[40px]" />
+              <Input placeholder="+998991234567" className="w-full !h-[40px]" />
             </Form.Item>
+
             <Form.Item
               name="blood_group"
               label="Qon guruhi"
@@ -563,7 +563,8 @@ export default function Registration() {
             <Form.Item
               name="gender"
               label="Jinsi"
-              className="md:col-span-2 col-span-6"
+              className="remove-required md:col-span-2 col-span-6"
+              rules={[{ required: true, message: "Jinsini kiriting" }]}
             >
               <Select
                 className="w-full  !h-[40px]"
@@ -740,7 +741,10 @@ export default function Registration() {
               label="Davlati"
               className="md:col-span-2 col-span-6"
             >
-              <Input className="w-full !h-[40px]" />
+              <Select
+                className="w-full  !h-[40px]"
+                options={[{ value: "uz", label: "Uzbekistan" }]}
+              />
             </Form.Item>
             <Form.Item
               name="region"
@@ -775,7 +779,7 @@ export default function Registration() {
           <div className="md:px-[24px] pb-4 flex gap-4 justify-end">
             <button
               onClick={() => form.resetFields()}
-              className="md:px-[30px] bg-[#d7d7d753] py-2.5 text-[12px] md:text-[16px] rounded-md text-black font-[500] cursor-pointer"
+              className="md:px-[30px] bg-[#d7d7d753] hover:shadow-md transition-all duration-150 py-2.5 text-[12px] md:text-[16px] rounded-md text-black font-[500] cursor-pointer"
               type="button"
             >
               Formani tozalash
@@ -787,7 +791,7 @@ export default function Registration() {
                     setSelectedPatientId(null),
                     setIsFormDisabled(false);
                 }}
-                className="md:px-[30px]  bg-[#d7d7d753] py-2.5 text-[12px] md:text-[16px] rounded-md text-black font-[500] cursor-pointer  flex justify-center items-center"
+                className="md:px-[30px] hover:shadow-md transition-all duration-150  bg-[#d7d7d753] py-2.5 text-[12px] md:text-[16px] rounded-md text-black font-[500] cursor-pointer  flex justify-center items-center"
                 type="button"
               >
                 Yangi bemor qo'shish
@@ -796,14 +800,14 @@ export default function Registration() {
             {isFormDisabled ? (
               <div
                 onClick={() => setIsFormDisabled(false)}
-                className="md:px-[30px]  bg-[#2B7FFF] rounded-md text-[12px] md:text-[16px] text-white font-[500] cursor-pointer !w-[150px] flex justify-center items-center"
+                className="md:px-[30px] hover:shadow-md transition-all duration-150  bg-[#2B7FFF] rounded-md text-[12px] md:text-[16px] text-white font-[500] cursor-pointer !w-[150px] flex justify-center items-center"
               >
                 O'zgartirish
               </div>
             ) : (
               <button
                 type="submit"
-                className="md:px-[30px] !h-[40px] bg-[#2B7FFF] text-[12px] md:text-[16px] rounded-md text-white font-[500] cursor-pointer !w-[150px] flex justify-center items-center"
+                className="md:px-[30px] hover:shadow-md transition-all duration-150 bg-[#2B7FFF] text-[12px] md:text-[16px] rounded-md text-white font-[500] cursor-pointer !w-[150px] flex justify-center items-center"
               >
                 {selectedPatientId ? (
                   addPatientLoading || updatePatientLoading ? (
@@ -863,7 +867,7 @@ export default function Registration() {
           <div className="px-[24px] pb-4 flex gap-4 justify-end mt-3 md:mt-auto">
             <button
               onClick={handleDoctorSubmit}
-              className="px-[30px] !h-[40px] text-[14px] bg-[#2B7FFF] rounded-md text-white font-[500] cursor-pointer !w-[150px] flex justify-center items-center"
+              className="px-[30px] hover:shadow-md transition-all duration-150 !h-[42px] text-[14px] bg-[#2B7FFF] rounded-md text-white font-[500] cursor-pointer !w-[150px] flex justify-center items-center"
             >
               {newVisitLoading ? (
                 <Spin

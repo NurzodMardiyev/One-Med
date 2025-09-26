@@ -1,8 +1,19 @@
 import axios from "axios";
 import SecureStorage from "react-secure-storage";
 
+
+
+// Apilar va versiyalar
+const  baby = "https://api.babyortomed.one-med.uz"
+const  bm = "https://api.bm.one-med.uz"
+const titan = "https://api.titan-renesans.one-med.uz"
+const nero = "https://api.nerolife.one-med.uz"
+
+
+console.log(baby, bm, titan, nero)
+
 const api = axios.create({
-  baseURL: "https://api.babyortomed.one-med.uz",
+  baseURL: baby,
 });
 // https://api.babyortomed.one-med.uz   /// 8080
 // https://api.bm.one-med.uz   /// 8081
@@ -41,7 +52,7 @@ api.interceptors.response.use(
 
       try {
         const response = await axios.post(
-          `https://api.babyortomed.one-med.uz/v1/auth/login`,
+          `${baby}/v1/auth/login`,
           { refresh: refreshToken }
         );
 

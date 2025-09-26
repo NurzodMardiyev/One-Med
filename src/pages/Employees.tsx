@@ -1,6 +1,6 @@
 import { FiPlus } from "react-icons/fi";
-import { IoSearch } from "react-icons/io5";
 import {
+  AutoComplete,
   Card,
   Form,
   Input,
@@ -56,7 +56,6 @@ type ServiceCategory = {
 export default function Employees() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
   const [role, setRole] = useState("");
   const per_page = 10;
 
@@ -77,12 +76,39 @@ export default function Employees() {
     });
   };
 
+  const [searchText, setSearchText] = useState("");
+  const [selectedEmployee, setSelectedEmployee] =
+    useState<EmployeeResponseType | null>(null);
+
+  useEffect(() => {
+    setSearchText("");
+  }, []);
+
   // Xodimlar olish
   const { data: employeesData, isLoading } = useQuery({
-    queryKey: ["employees", page, per_page, search, role],
-    queryFn: () => OneMedAdmin.getEmployeesFilter(page, per_page, search, role),
+    queryKey: ["employees", page, per_page, searchText, role],
+    queryFn: () =>
+      OneMedAdmin.getEmployeesFilter(page, per_page, searchText, role),
     keepPreviousData: true,
+    refetchOnWindowFocus: false,
   });
+
+  const options =
+    employeesData?.data?.map((item: EmployeeResponseType) => ({
+      value: item.fio, // input ichida chiqadigan text
+      label: item.fio, // dropdown label
+      key: item.id, // unique id
+      item, // butun obyekt
+    })) || [];
+
+  const handleSearch = (val: string) => {
+    setSearchText(val);
+    setSelectedEmployee(null);
+  };
+
+  const handleSelect = (_val: string, option: any) => {
+    setSelectedEmployee(option.item); // to‘liq objectni saqlaymiz
+  };
 
   // Servislarni olish
 
@@ -206,7 +232,7 @@ export default function Employees() {
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex gap-2 text-[14px] md:text-[16px] items-center py-2 px-4 rounded-md text-white cursor-pointer bg-[#2B7FFF]"
+          className="flex gap-2 text-[14px] md:text-[16px] items-center py-2 px-4 rounded-md text-white cursor-pointer bg-[#2B7FFF] hover:shadow-md transition-all duration-150"
         >
           <FiPlus className="md:text-[20px] text-[14px] hidden md:block" />
           Xodim qo'shish
@@ -215,19 +241,16 @@ export default function Employees() {
 
       {/* Search + filter */}
       <div className="px-6 py-6 border border-[#E0E6EB] rounded-[10px] flex md:flex-row flex-col items-center gap-3 mt-4">
-        <Form
-          onFinish={(values) => setSearch(values.search)}
-          className="flex-1 w-full"
-        >
-          <Form.Item name="search" className="!m-0 relative">
-            <div>
-              <IoSearch className="inline-block absolute left-[10px] top-[35%] text-[#717171]" />
-              <input
-                type="text"
-                className="w-full border border-[#eaeaea] m-0 pr-3 py-2 ps-[35px] rounded-[6px] focus:outline-[#2D80FF] bg-[#F9FAFB] text-[14px] md:h-[41px]"
-                placeholder="Ism, bo'lim yoki ID bo'yicha qidirish..."
-              />
-            </div>
+        <Form className="md:flex-1 !w-full">
+          <Form.Item name="search" className="!m-0 relative flex-1">
+            <AutoComplete
+              options={options}
+              onSelect={handleSelect}
+              onSearch={handleSearch}
+              placeholder="Xodim qidiring..."
+              className="!w-full !h-[40px]"
+              notFoundContent="Xodim topilmadi!"
+            />
           </Form.Item>
         </Form>
         <div className="flex items-center gap-2">
@@ -236,8 +259,8 @@ export default function Employees() {
               key={r}
               onClick={() => setRole(r)}
               className={`px-3 py-2 border border-[#eaeaea] rounded-[6px] ${
-                role === r ? "bg-[#2D80FF] text-white" : "text-black"
-              } cursor-pointer text-[14px] md:h-[41px]`}
+                role === r ? "bg-[#2D80FF] text-white " : "text-black"
+              } cursor-pointer text-[14px] md:h-[41px] hover:shadow-md transition-all duration-150`}
             >
               {r === ""
                 ? "Barchasi"
@@ -251,14 +274,39 @@ export default function Employees() {
         </div>
       </div>
 
-      {/* Employees list */}
       <div className="mt-[14px]">
-        {employeesData?.data?.map(
-          (item: { id: string; fio: string; phone: string; role: string }) => (
+        {selectedEmployee ? (
+          // faqat tanlangan bitta xodimni chiqarish
+          <Link
+            key={selectedEmployee.id}
+            to={`${selectedEmployee.id}`}
+            className="px-6 py-4 border border-[#E0E6EB] flex items-center justify-between rounded-[10px] bg-[#fff] mb-3 hover:shadow-md transition-all duration-150"
+          >
+            <div className="flex items-center gap-3">
+              <div className="md:w-[50px] md:h-[50px] w-[35px] h-[35px] flex justify-center items-center rounded-full bg-[#E7F0FA] text-[#2A81D8] md:text-[24px] text-[20px]">
+                <LuUser />
+              </div>
+              <div>
+                <h3 className="md:text-[18px] text-[14px] font-[600]">
+                  {selectedEmployee.fio}
+                </h3>
+                <p className="md:text-[14px] text-[12px] text-[#8b8b8b] flex gap-2">
+                  <BsTelephone /> {selectedEmployee.phone}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button className="px-2.5 py-1 rounded-full text-[#5AA6F2] bg-[#EEF6FD] flex items-center text-[14px] gap-1.5">
+                <FaUserDoctor /> {selectedEmployee.role}
+              </button>
+            </div>
+          </Link>
+        ) : (
+          employeesData?.data?.map((item: any) => (
             <Link
               key={item.id}
               to={`${item.id}`}
-              className="px-6 py-4 border border-[#E0E6EB] flex items-center justify-between rounded-[10px] bg-[#fff] mb-3"
+              className="px-6 py-4 border border-[#E0E6EB] flex items-center justify-between rounded-[10px] bg-[#fff] mb-3 hover:shadow-md transition-all duration-150"
             >
               <div className="flex items-center gap-3">
                 <div className="md:w-[50px] md:h-[50px] w-[35px] h-[35px] flex justify-center items-center rounded-full bg-[#E7F0FA] text-[#2A81D8] md:text-[24px] text-[20px]">
@@ -279,11 +327,11 @@ export default function Employees() {
                 </button>
               </div>
             </Link>
-          )
+          ))
         )}
 
         {/* Pagination */}
-        {employeesData?.meta?.total_items > 10 && (
+        {employeesData?.meta?.total_items > 10 && !selectedEmployee && (
           <div className="px-6 py-4 border border-[#E0E6EB] flex items-center justify-end rounded-[10px] bg-[#fff] mb-5">
             <Pagination
               current={page}

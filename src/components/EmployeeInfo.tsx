@@ -1,6 +1,6 @@
 import { BiSolidEditAlt } from "react-icons/bi";
 import { IoMdArrowBack } from "react-icons/io";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 // import { IoTrashOutline } from "react-icons/io5";
 import { FaStethoscope } from "react-icons/fa6";
 import { PiMedalLight } from "react-icons/pi";
@@ -16,7 +16,11 @@ import {
   YAxis,
 } from "recharts";
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { OneMedAdmin, UpdateEmployeePayload } from "../queries/query";
+import {
+  DeleteResponse,
+  OneMedAdmin,
+  UpdateEmployeePayload,
+} from "../queries/query";
 import {
   Input,
   Modal,
@@ -30,6 +34,7 @@ import {
 import { BsDoorOpen } from "react-icons/bs";
 import { useEffect, useState } from "react";
 import { LoadingOutlined } from "@ant-design/icons";
+import { GoTrash } from "react-icons/go";
 
 export interface Service {
   id: string;
@@ -164,6 +169,7 @@ export default function EmployeeInfo() {
 
   const handleCancel = () => {
     setIsModalOpen(false);
+    setEnable(false);
   };
 
   const handleOkPass = () => {
@@ -249,12 +255,22 @@ export default function EmployeeInfo() {
 
   // Servislarni olish
 
-  const { data: servicesData, isFetching } = useQuery({
+  const {
+    data: servicesData,
+    isFetching,
+    refetch: serviceFetch,
+  } = useQuery({
     queryKey: ["services", serPage], // <-- serPage qo‘shildi
     queryFn: () => OneMedAdmin.getServices(serPage, 10),
     enabled: enable,
     keepPreviousData: true, // eski data yo‘qolmasin
   });
+
+  useEffect(() => {
+    if (id) {
+      serviceFetch();
+    }
+  }, [id]);
 
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -304,6 +320,42 @@ export default function EmployeeInfo() {
     }
   }, [servicesData]);
 
+  // Delete qilish modal
+  const [deleteModal, setDeleteModal] = useState(false);
+  const showDeleteModal = () => {
+    setDeleteModal(true);
+  };
+  const handleDeleteCancel = () => {
+    setDeleteModal(false);
+  };
+  const navigate = useNavigate();
+
+  const { mutate: deletePatientMutate, isLoading: deletePatientLoading } =
+    useMutation<DeleteResponse, Error, string>(
+      (id) => OneMedAdmin.deleteEmployee(id),
+      {
+        onSuccess: (data) => {
+          console.log("Xodim o‘chirildi:", data);
+          openNotificationWithIcon(
+            "success",
+            "O‘chirish muvaffaqiyatli",
+            data.message || "Xodim bazadan o‘chirildi!"
+          );
+
+          queryClient.invalidateQueries(["employees"]);
+
+          navigate("/employees"); // react-router-dom bo‘lsa
+        },
+        onError: () => {
+          openNotificationWithIcon(
+            "error",
+            "O‘chirishda xatolik",
+            "Iltimos qayta urinib ko‘ring!"
+          );
+        },
+      }
+    );
+
   // const takeServicesFromBack = () => setEnable(true);
 
   return (
@@ -336,6 +388,13 @@ export default function EmployeeInfo() {
         {/* Edit tugmasi */}
         <div className="flex gap-3 flex-col-reverse md:flex-row">
           <button
+            onClick={showDeleteModal}
+            className="cursor-pointer text-red-500 border-red-500 md:px-6 px-3 md:py-2 py-1.5 border  rounded-md md:text-[14px] text-[12px] flex md:gap-2 hover:bg-[#ff121218] transition-all duration-150"
+          >
+            <GoTrash className="md:text-[18px] text-[16px]" />
+            O'chirish
+          </button>
+          <button
             onClick={showModalPassword}
             className="cursor-pointer text-yellow-500 border-yellow-500 md:px-6 px-3 md:py-2 py-1.5 border  rounded-md md:text-[14px] text-[12px] flex md:gap-2 hover:bg-[#ffbc1218] transition-all duration-150"
           >
@@ -357,9 +416,45 @@ export default function EmployeeInfo() {
         </div>
       </div>
 
+      {/* Xodimn o'chirish */}
+      <Modal
+        open={deleteModal}
+        onCancel={handleDeleteCancel}
+        footer={false}
+        centered
+        closable={false}
+        maskClosable={false}
+      >
+        <div className="flex text-[14px] md:text-[18px] items-center gap-2 text-lg font-semibold">
+          <GoTrash className="text-[#ff4d7c]" />
+          <span>Bemorni o'chirish</span>
+        </div>
+        <p className="text-[#767676] text-[12px] md:text-[16px] my-3">
+          Haqiqatan ham "{employeeData?.data.fio}" xodimni o'chirmoqchimisiz? Bu
+          amal bekor qilib bo'lmaydi.
+        </p>
+        <div className="flex justify-end items-center gap-3">
+          <button
+            onClick={() => setDeleteModal(false)}
+            className="cursor-pointer border border-[#d9d9d9]  md:px-6 px-3 md:py-2 py-1.5  rounded-md md:text-[14px] text-[12px flex md:gap-2 hover:bg-[#E6F4FF] transition-all duration-150"
+          >
+            Bekor qilish
+          </button>
+          <button
+            onClick={() => {
+              if (!id) return;
+              deletePatientMutate(id);
+            }}
+            className="cursor-pointer text-red-500 border-red-500 md:px-6 px-3 md:py-2 py-1.5 border rounded-md md:text-[14px] text-[12px] flex md:gap-2 hover:bg-[#ffe6e65e] transition-all duration-150"
+          >
+            {deletePatientLoading ? "O‘chirilmoqda..." : "O‘chirish"}
+          </button>
+        </div>
+      </Modal>
+
       {/* Modal */}
       <Modal
-        title="Tahrirlash"
+        title="Xodim ma'lumotlarini tahrirlash"
         closable={{ "aria-label": "Custom Close Button" }}
         open={isModalOpen}
         onOk={handleOk}
@@ -469,7 +564,7 @@ export default function EmployeeInfo() {
               ) : (
                 <button
                   type="submit"
-                  className="flex justify-center items-center !w-full !h-[38px] mt-3 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                  className="flex justify-center items-center cursor-pointer !w-full !h-[38px] mt-3 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
                 >
                   {updateEmployeeLoading ? (
                     <Spin indicator={<LoadingOutlined spin />} />
@@ -580,28 +675,40 @@ export default function EmployeeInfo() {
                 <div className="p-2 rounded-md text-[#0079f3] bg-[#bed2e7]">
                   <LuUser />
                 </div>
-                <div>
+                <div className="w-full">
                   <h5 className="font-[600] md:text-[18px] text-[16px] mt-1">
                     Mutahasislik
                   </h5>
-                  <div className="flex flex-col gap-2.5 mt-4">
-                    <div>
-                      <span className="uppercase md:text-[16px] text-[14px] text-[#8FA9C7]">
-                        BOLIM
-                      </span>
+                  <div className="w-full flex flex-col gap-2.5 mt-4">
+                    <div className="w-full">
                       {employeeData?.data?.doctor?.categories?.map((item) => (
-                        <div key={item.id}>
-                          <p className="font-[600]">{item.name}</p>
+                        <div key={item.id} className="mb-2 w-full">
+                          {/* Kategoriya nomi */}
+                          <h3 className="text-lg font-[500] text-[#2B7FFF]">
+                            {item.name}
+                          </h3>
 
-                          <span className="uppercase mt-2 text-[14px] md:text-[16px] inline-block text-[#8FA9C7]">
-                            Servis
-                          </span>
+                          {/* Servis sarlavha */}
+                          <p className="uppercase text-sm text-gray-500 mt-1 mb-2">
+                            Servislar:
+                          </p>
 
-                          {item.services?.map((i) => (
-                            <p key={i.id} className="font-[600]">
-                              {i.name}
-                            </p>
-                          ))}
+                          {/* Servislar ro'yxati */}
+                          <ul className="space-y-2">
+                            {item.services?.map((service, index) => (
+                              <li
+                                key={service.id}
+                                className="flex items-centter gap-2 "
+                              >
+                                <span className="text-[#b3b3b3]">
+                                  {index + 1}.
+                                </span>
+                                <span className="font-medium">
+                                  {service.name}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       ))}
                     </div>

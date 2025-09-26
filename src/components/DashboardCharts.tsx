@@ -106,19 +106,7 @@ export default function DashboardCharts({ chartId }: Props) {
             label={{ value: "", position: "insideRight", angle: -90 }}
           />
           <Legend />
-          <Tooltip
-            content={({ active, payload, label }) => {
-              if (active && payload && payload.length) {
-                return (
-                  <div className="bg-white border p-2 rounded shadow">
-                    <p>{`Sana: ${label}`}</p>
-                    <p>{`Soni: ${payload[0].value}`}</p>
-                  </div>
-                );
-              }
-              return null;
-            }}
-          />
+          <Tooltip />
         </LineChart>
       </div>
     );
@@ -136,7 +124,7 @@ export default function DashboardCharts({ chartId }: Props) {
       barChartData?.data.map((item: { date: string; visit_count: number }) => {
         const day = new Date(item.date).getDate(); // '2025-09-01' → 1
         return {
-          name: `${day}-kun`,
+          name: `${day}`,
           soni: item.visit_count,
         };
       }) ?? [];

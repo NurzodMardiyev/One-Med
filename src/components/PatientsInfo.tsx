@@ -1,6 +1,6 @@
 // ========================= IMPORTS =========================
-import { useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import {
   Empty,
@@ -16,6 +16,8 @@ import {
   Divider,
   notification,
   Space,
+  DatePicker,
+  // Upload,
 } from "antd";
 import {
   AppstoreOutlined,
@@ -23,21 +25,28 @@ import {
   LoadingOutlined,
   MinusCircleOutlined,
   PlusOutlined,
+  // UploadOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 // ===== Icons =====
 import { IoMdArrowBack } from "react-icons/io";
-// import { BiSolidEditAlt } from "react-icons/bi";
+import { BiSolidEditAlt } from "react-icons/bi";
 import { RiUser3Line } from "react-icons/ri";
 import { LuUser, LuHeart } from "react-icons/lu";
 import { BsCalendar4, BsTelephone } from "react-icons/bs";
 import { GrDocumentText } from "react-icons/gr";
 // import { FiPlus } from "react-icons/fi";
+import { GoTrash } from "react-icons/go";
 
 import "../App.css";
-import { DiagnosisResponse, OneMedAdmin } from "../queries/query";
+import {
+  DeleteResponse,
+  DiagnosisResponse,
+  OneMedAdmin,
+} from "../queries/query";
+import { PatientRequest, PatientResponse } from "../pages/Registration";
 
 // ========================= TYPES =========================
 // Pasport, ID, hujjatlar uchun
@@ -178,6 +187,7 @@ export default function PatientsInfo() {
   const [segmentValue, setSegmentValue] = useState(true);
 
   const [form] = Form.useForm();
+  const [formUpdate] = Form.useForm();
   // Modal (yangi tashrif qo‘shish)
   const [isVisitOpen, setIsVisitOpen] = useState(false);
 
@@ -207,6 +217,55 @@ export default function PatientsInfo() {
   };
   const handleCancel = () => setIsVisitOpen(false);
 
+  // Modal Edit ochish-yopish handlerlari
+  const [editModal, setEditModal] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const showEditModal = () => {
+    setEditModal(true);
+  };
+  const handleEditancel = () => {
+    setEditModal(false);
+    setEditMode(false);
+  };
+
+  // Delete qilish modal
+  const [deleteModal, setDeleteModal] = useState(false);
+  const showDeleteModal = () => {
+    setDeleteModal(true);
+  };
+  const handleDeleteCancel = () => {
+    setDeleteModal(false);
+  };
+  const navigate = useNavigate();
+
+  const { mutate: deletePatientMutate, isLoading: deletePatientLoading } =
+    useMutation<DeleteResponse, Error, string>(
+      (id) => OneMedAdmin.deletePatient(id),
+      {
+        onSuccess: (data) => {
+          console.log("Bemor o‘chirildi:", data);
+          openNotificationWithIcon(
+            "success",
+            "O‘chirish muvaffaqiyatli",
+            data.message || "Bemor bazadan o‘chirildi!"
+          );
+
+          // querylarni invalidate qilish (agar kerak bo‘lsa)
+          queryClient.invalidateQueries(["patients"]);
+
+          // sahifadan chiqib ketish (navigate yoki router orqali)
+          navigate("/patients"); // react-router-dom bo‘lsa
+        },
+        onError: () => {
+          openNotificationWithIcon(
+            "error",
+            "O‘chirishda xatolik",
+            "Iltimos qayta urinib ko‘ring!"
+          );
+        },
+      }
+    );
+
   // ========================= QUERIES =========================
   // 1. Bemor ma’lumotlari
   const {
@@ -220,6 +279,67 @@ export default function PatientsInfo() {
     cacheTime: Infinity,
   });
 
+  // Bemorni malumotlarini tahrirlash modaliga qo'yish
+
+  useEffect(() => {
+    if (patientData) {
+      formUpdate.setFieldsValue({
+        first_name: patientData.data.first_name,
+        last_name: patientData.data.last_name,
+        middle_name: patientData.data.middle_name,
+        phone: patientData.data.phone,
+        gender: patientData.data.gender,
+        blood_group: patientData.data.blood_group,
+        country: patientData.data.country,
+        region: patientData.data.region,
+        address: patientData.data.address,
+        height: patientData.data.height,
+        weight: patientData.data.weight,
+        date_of_birth: patientData.data.date_of_birth
+          ? dayjs(patientData.data.date_of_birth, "YYYY-MM-DD")
+          : null,
+      });
+    }
+  }, [patientData, editModal]);
+
+  // Bemorni malumotlarini tahrirlash mutation
+  const { mutate: updatePatientMutate, isLoading: updatePatientLoading } =
+    useMutation<PatientResponse, Error, { id: string; obj: PatientRequest }>(
+      ({ id, obj }) => OneMedAdmin.updatePatient(id, obj),
+      {
+        onSuccess: (data) => {
+          queryClient.invalidateQueries();
+          console.log("Bemor yangilandi:", data);
+          openNotificationWithIcon(
+            "success",
+            "Bemor yangilandi",
+            "Muvaffaqqiyatli bajaroldi!"
+          );
+          // success("Bemor muvaffaqqiyatli yangilandi!");
+        },
+        onError: () => {
+          openNotificationWithIcon(
+            "error",
+            "Bemor yangilashda xatolik",
+            "iltimos qaytadan urinib ko'ring!"
+          );
+        },
+      }
+    );
+
+  const handleUpdatePatient = (values: any) => {
+    if (!id) return;
+
+    const payload: PatientRequest = {
+      ...values,
+      date_of_birth: values.date_of_birth
+        ? values.date_of_birth.format("YYYY-MM-DD") // yoki "YYYY-MM-DDTHH:mm:ss"
+        : "",
+    };
+
+    updatePatientMutate({ id, obj: payload });
+  };
+
   // 2. Bemor tashriflari
   const [visitesPage, setvisitespage] = useState(1);
   const { data: patientVisitesData, refetch: visitsFetch } = useQuery<
@@ -228,8 +348,14 @@ export default function PatientsInfo() {
   >({
     queryKey: ["patientVisitesData", id, visitesPage, 10],
     queryFn: () => OneMedAdmin.patientVisitesData(id!, visitesPage, 10),
-    enabled: !!id,
+    enabled: false,
   });
+
+  useEffect(() => {
+    if (id) {
+      visitsFetch();
+    }
+  }, [id, visitesPage]);
 
   // 3. Xodimlar (shifokorlar) ro‘yxati
   const { data: employeesData } = useQuery({
@@ -365,22 +491,6 @@ export default function PatientsInfo() {
 
   const location = useLocation();
 
-  // Show confirm
-
-  // const { mutate: updateStatus } = useMutation<any, Error, { status: string }>(
-  //   (obj) => OneMedAdmin.statusPatch(id, visitId, obj),
-  //   {
-  //     onSuccess: () => {
-  //       queryClient.invalidateQueries(["Visit", id, visitId]);
-  //       Modal.success({ content: "Holat yangilandi!" });
-  //       Modal.destroyAll();
-  //     },
-  //     onError: () => {
-  //       Modal.error({ content: "Xatolik yuz berdi!" });
-  //     },
-  //   }
-  // );
-
   // Component ichida
   const { mutate: updateStatus, isLoading: updateStatusLoading } = useMutation<
     any,
@@ -465,6 +575,7 @@ export default function PatientsInfo() {
     });
   };
 
+  const currentPath = location.pathname.split("/")[1] || "doctor";
   // ========================= LOADING / ERROR =========================
   if (isLoading) {
     return (
@@ -477,7 +588,7 @@ export default function PatientsInfo() {
   if (error) {
     return (
       <div className="absolute left-0 top-0 z-[9999] w-full h-screen flex justify-center items-center bg-white/20 backdrop:blur-2xl">
-        <Empty image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg" />
+        <Empty />
       </div>
     );
   }
@@ -492,9 +603,9 @@ export default function PatientsInfo() {
         <div className="flex items-center gap-4">
           <Link
             to={`${
-              location.pathname.slice(1, 7) === "doctor"
+              currentPath === "doctor"
                 ? "/doctor/patients"
-                : location.pathname.slice(1, 7) === "regist"
+                : currentPath === "register"
                 ? "/register/patients"
                 : "/patients"
             }`}
@@ -522,11 +633,25 @@ export default function PatientsInfo() {
         </div>
 
         {/* Edit tugmasi */}
-        <div>
-          {/* <button className="cursor-pointer px-6 py-2.5 bg-[#4d94ff] text-[#fff] rounded-md text-[14px] flex gap-2 hover:bg-[#2B7FFF] transition-all duration-150">
-            <BiSolidEditAlt className="text-[18px]" />
+        <div className="flex items-center gap-3">
+          {currentPath === "doctor" || currentPath === "register" ? (
+            ""
+          ) : (
+            <button
+              onClick={showDeleteModal}
+              className="cursor-pointer  hover:shadow-md transition-all duration-150 text-red-500 border-red-500 md:px-6 px-3 md:py-2 py-1.5 border  rounded-md md:text-[14px] text-[12px flex md:gap-2 hover:bg-[#ffe6e6] transition-all duration-150"
+            >
+              <GoTrash className="md:text-[18px] text-[16px]" />
+              O'chirish
+            </button>
+          )}
+          <button
+            onClick={showEditModal}
+            className="cursor-pointer  hover:shadow-md transition-all duration-150 text-blue-500 border-blue-500 md:px-6 px-3 md:py-2 py-1.5 border  rounded-md md:text-[14px] text-[12px flex md:gap-2 hover:bg-[#E6F4FF] transition-all duration-150"
+          >
+            <BiSolidEditAlt className="md:text-[18px] text-[16px]" />
             Tahrirlash
-          </button> */}
+          </button>
         </div>
       </div>
 
@@ -602,12 +727,12 @@ export default function PatientsInfo() {
                 <h3 className="font-[500] text-[14px] md:text-[16px]">
                   Tashriflar tarixi
                 </h3>
-                {location.pathname.slice(1, 7) === "doctor" ? (
+                {currentPath === "doctor" ? (
                   ""
                 ) : (
                   <button
                     onClick={showModal}
-                    className="flex items-center text-white bg-[#4D94FF] text-[12px] px-4 py-2.5 gap-2 rounded-md cursor-pointer"
+                    className="flex  hover:shadow-md transition-all duration-150 items-center text-white bg-[#4D94FF] text-[12px] px-4 py-2.5 gap-2 rounded-md cursor-pointer"
                   >
                     <AppstoreOutlined className="text-[#4D94FF] hidden md:block" />{" "}
                     Yangi tashrif qo'shish
@@ -702,6 +827,187 @@ export default function PatientsInfo() {
                   </Form.Item>
                 </Form>
               </Modal>
+
+              {/* Modal Update qilish  */}
+              <Modal
+                title={
+                  <div className="flex text-[12px] md:text-[16px] items-center gap-2 text-lg font-semibold">
+                    <BiSolidEditAlt className="text-[#4D94FF]" />
+                    <span>Bemor ma'lumotlarini tahrirlash</span>
+                  </div>
+                }
+                open={editModal}
+                onCancel={handleEditancel}
+                footer={false}
+                centered
+              >
+                <Form
+                  onFinish={handleUpdatePatient}
+                  layout="vertical"
+                  className="space-y-4"
+                  form={formUpdate}
+                >
+                  <Card className="!border-none">
+                    <Form.Item
+                      label="Ism"
+                      name="first_name"
+                      rules={[{ required: true, message: "Ism kiriting!" }]}
+                    >
+                      <Input disabled={!editMode} />
+                    </Form.Item>
+                    <Form.Item
+                      label="Familiya"
+                      name="last_name"
+                      rules={[
+                        { required: true, message: "Familiya kiriting!" },
+                      ]}
+                    >
+                      <Input disabled={!editMode} />
+                    </Form.Item>
+                    <Form.Item label="Otasining ismi" name="middle_name">
+                      <Input disabled={!editMode} />
+                    </Form.Item>
+                    <Form.Item
+                      label="Telefon raqami"
+                      name="phone"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Telefon raqamini kiriting!",
+                        },
+                      ]}
+                    >
+                      <Input disabled={!editMode} />
+                    </Form.Item>
+
+                    <Form.Item label="Uy telefon raqami" name="home_phone">
+                      <Input disabled={!editMode} />
+                    </Form.Item>
+                    <Form.Item label="Jinsi" name="gender">
+                      <Select
+                        disabled={!editMode}
+                        options={[
+                          { value: "male", label: "Erkak" },
+                          { value: "female", label: "Ayol" },
+                        ]}
+                      />
+                    </Form.Item>
+                    <Form.Item name="blood_group" label="Qon guruhi">
+                      <Select
+                        disabled={!editMode}
+                        className=""
+                        options={[
+                          { value: "A+", label: "A+" },
+                          { value: "A-", label: "A-" },
+                          {
+                            value: "B+",
+                            label: "B+",
+                          },
+                          {
+                            value: "B-",
+                            label: "B-",
+                          },
+                          {
+                            value: "AB+",
+                            label: "AB+",
+                          },
+                          {
+                            value: "AB-",
+                            label: "AB-",
+                          },
+                          {
+                            value: "O+",
+                            label: "O-",
+                          },
+                        ]}
+                      />
+                    </Form.Item>
+
+                    <Form.Item label="Tug'ilgan kuni" name="date_of_birth">
+                      <DatePicker disabled={!editMode} className="!w-full" />
+                    </Form.Item>
+                    <Form.Item label="Mamlakat" name="country">
+                      <Select
+                        disabled={!editMode}
+                        options={[{ value: "uz", label: "Uzbekistan" }]}
+                      />
+                    </Form.Item>
+                    <Form.Item label="Shahar" name="region">
+                      <Input disabled={!editMode} />
+                    </Form.Item>
+                    <Form.Item label="Tuman, qishloq" name="address">
+                      <Input disabled={!editMode} />
+                    </Form.Item>
+                    <Form.Item label="Bo'yi" name="height">
+                      <Input disabled={!editMode} />
+                    </Form.Item>
+                    <Form.Item label="Og'irligi" name="weight">
+                      <Input disabled={!editMode} />
+                    </Form.Item>
+
+                    <div>
+                      {!editMode ? (
+                        <div
+                          onClick={() => setEditMode(true)}
+                          className="flex  hover:shadow-md transition-all duration-150 justify-center cursor-pointer items-center !w-full !h-[38px] mt-3 px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg"
+                        >
+                          Tahrirlash
+                        </div>
+                      ) : (
+                        <button
+                          type="submit"
+                          className="flex  hover:shadow-md transition-all duration-150 justify-center items-center !w-full !h-[38px] mt-3 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                        >
+                          {updatePatientLoading ? (
+                            <Spin indicator={<LoadingOutlined spin />} />
+                          ) : (
+                            "Saqlash"
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </Card>
+                </Form>
+              </Modal>
+
+              {/* Modal Delete qilish kerak */}
+              <Modal
+                open={deleteModal}
+                onCancel={handleDeleteCancel}
+                footer={false}
+                centered
+                closable={false}
+                maskClosable={false}
+              >
+                <div className="flex text-[14px] md:text-[18px] items-center gap-2 text-lg font-semibold">
+                  <GoTrash className="text-[#ff4d7c]" />
+                  <span>Bemorni o'chirish</span>
+                </div>
+                <p className="text-[#767676] text-[12px] md:text-[16px] my-3">
+                  Haqiqatan ham "{patientData?.data.first_name}{" "}
+                  {patientData?.data.last_name}" bemorni o'chirmoqchimisiz? Bu
+                  amal bekor qilib bo'lmaydi.
+                </p>
+                <div className="flex justify-end items-center gap-3">
+                  <button
+                    onClick={() => setDeleteModal(false)}
+                    className="cursor-pointer border  hover:shadow-md transition-all duration-150 border-[#d9d9d9]  md:px-6 px-3 md:py-2 py-1.5  rounded-md md:text-[14px] text-[12px flex md:gap-2 hover:bg-[#E6F4FF] transition-all duration-150"
+                  >
+                    Bekor qilish
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!id) return;
+                      deletePatientMutate(id);
+                    }}
+                    className="cursor-pointer  hover:shadow-md  text-red-500 border-red-500 md:px-6 px-3 md:py-2 py-1.5 border rounded-md md:text-[14px] text-[12px] flex md:gap-2 hover:bg-[#ffe6e65e] transition-all duration-150"
+                  >
+                    {deletePatientLoading ? "O‘chirilmoqda..." : "O‘chirish"}
+                  </button>
+                </div>
+              </Modal>
+
+              {/* Modal tashfis qo'shish */}
               <Modal
                 title="🩺 Tashhis qo'yish"
                 open={diagnosModal}
@@ -756,7 +1062,7 @@ export default function PatientsInfo() {
                     )}
 
                     {/* Yangi retsept qo'shish formi */}
-                    {location.pathname.slice(1, 7) === "doctor" && (
+                    {currentPath === "doctor" && (
                       <>
                         <Form.List name="recipes">
                           {(fields, { add, remove }) => (
@@ -810,7 +1116,7 @@ export default function PatientsInfo() {
                                   onClick={() => add()}
                                   block
                                   icon={<PlusOutlined />}
-                                  className="rounded-lg border-dashed"
+                                  className="rounded-lg border-dashed  hover:shadow-md transition-all duration-150"
                                 >
                                   Yangi retsept qo'shish
                                 </Button>
@@ -818,6 +1124,27 @@ export default function PatientsInfo() {
                             </div>
                           )}
                         </Form.List>
+                        {/* <Form.Item
+                          name="attachments"
+                          valuePropName="fileList"
+                          getValueFromEvent={(e) =>
+                            Array.isArray(e) ? e : e?.fileList
+                          }
+                          className="!w-full border"
+                        >
+                          <h3 className="text-[16px] font-semibold">
+                            ➕ Qo'shimcha fayl yuklash
+                          </h3>
+                          <Upload
+                            className="!w-full"
+                            beforeUpload={() => false}
+                          >
+                            <Button icon={<UploadOutlined />}>
+                              Fayl yuklash
+                            </Button>
+                          </Upload>
+                        </Form.Item> */}
+
                         <Divider />
 
                         <Form.Item className="!flex justify-end">
@@ -825,14 +1152,14 @@ export default function PatientsInfo() {
                             <button
                               onClick={showConfirm}
                               type="button"
-                              className="rounded-md !px-10 border !h-[36px] flex justify-center items-center cursor-pointer"
+                              className="rounded-md !px-10 border !h-[36px] flex justify-center items-center cursor-pointer  hover:shadow-md transition-all duration-150"
                             >
                               Statusni o'zgartirish
                             </button>
                             <Button
                               type="primary"
                               htmlType="submit"
-                              className="rounded-md !px-10 !h-[36px]"
+                              className="rounded-md !px-10 !h-[36px] hover:shadow-md transition-all duration-150"
                             >
                               Saqlash
                             </Button>
@@ -897,10 +1224,26 @@ export default function PatientsInfo() {
                           </li>
                           <li className="flex items-center md:text-[14px] text-[12px] gap-2 text-[#676767]">
                             <span className="font-[400] text-[#000]">
-                              Tashhis:
+                              Servislar:
                             </span>
-                            {item.diagnosis}
+                            {item.services.map((i, index) => (
+                              <span
+                                key={i.id || index}
+                                className="text-blue-500"
+                              >
+                                {i.name}
+                                {index !== item.services.length - 1 && ", "}
+                              </span>
+                            ))}
                           </li>
+                          {item.diagnosis !== null && (
+                            <li className="flex items-center md:text-[14px] text-[12px] gap-2 text-[#676767]">
+                              <span className="font-[400] text-[#000]">
+                                Tashhis:
+                              </span>
+                              {item.diagnosis}
+                            </li>
+                          )}
                           <li className="flex items-center md:text-[14px] text-[12px] gap-2 text-[#676767]">
                             <span className="font-[400] text-[#000]">
                               To'lov:
