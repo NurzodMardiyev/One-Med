@@ -62,7 +62,6 @@ export default function SettingDoctor() {
   );
 
   const handleSave = (values: any) => {
-    console.log("Saqlanayotgan data:", values);
     // bu yerda update mutation chaqiriladi
     setIsEditing(false);
     updateProfile(values);

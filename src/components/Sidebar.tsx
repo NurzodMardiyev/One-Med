@@ -7,7 +7,7 @@ import { IoSettingsOutline } from "react-icons/io5";
 import { FiLogOut } from "react-icons/fi";
 import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { useCreateContext } from "../context/ContextApi";
-import logo from "../../public/images/logo.png";
+import logo from "../../public/images/logo.webp";
 
 type MenuItem = Required<Parameters<typeof Menu>[0]>["items"][number];
 
@@ -49,7 +49,7 @@ export default function Sidebar() {
               key: "logo",
               icon: (
                 <div>
-                  <img src={logo} alt="" className="w-[35px]" />
+                  <img loading="lazy" src={logo} alt="" className="w-[35px]" />
                 </div>
               ),
               label: (

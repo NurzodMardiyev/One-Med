@@ -13,7 +13,7 @@ const nero = "https://api.nerolife.one-med.uz"
 console.log(baby, bm, titan, nero)
 
 const api = axios.create({
-  baseURL: baby,
+  baseURL: bm,
 });
 // https://api.babyortomed.one-med.uz   /// 8080
 // https://api.bm.one-med.uz   /// 8081
@@ -52,7 +52,7 @@ api.interceptors.response.use(
 
       try {
         const response = await axios.post(
-          `${baby}/v1/auth/login`,
+          `${bm}/v1/auth/login`,
           { refresh: refreshToken }
         );
 

@@ -17,7 +17,7 @@ const  bm = "https://api.bm.one-med.uz"
 const titan = "https://api.titan-renesans.one-med.uz"
 const nero = "https://api.nerolife.one-med.uz"
 
-export const baseApi = baby;
+export const baseApi = bm;
 
 console.log(baby, bm, titan, nero)
 

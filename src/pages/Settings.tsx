@@ -186,10 +186,9 @@ export default function Settings() {
     useMutation<ServicesResponse, Error, CreateCategoryServiceRequest>(
       (obj) => OneMedAdmin.addServices(obj),
       {
-        onSuccess: (data) => {
+        onSuccess: () => {
           queryClient.invalidateQueries(["addServices"]);
           refetch();
-          console.log(data);
 
           // 🔥 Qayta bosh holatga qaytarish
 
@@ -349,14 +348,12 @@ export default function Settings() {
   const { mutate: deleteServiceMutate } = useMutation(
     (id: string) => OneMedAdmin.deleteService(id),
     {
-      onSuccess: (res) => {
-        console.log("Deleted:", res);
+      onSuccess: () => {
         queryClient.invalidateQueries(["getCategory"]);
         refetch();
         setDeletingId(null);
       },
-      onError: (error) => {
-        console.error("Delete error:", error);
+      onError: () => {
         setDeletingId(null);
       },
     }
@@ -449,7 +446,6 @@ export default function Settings() {
   //   );
 
   const onChangeSelect = (newValue: string) => {
-    console.log("Selected:", newValue);
     setValue(newValue);
   };
 
@@ -461,8 +457,7 @@ export default function Settings() {
       (data: { id: string; name: string }) =>
         OneMedAdmin.updateCategory(data.id, { name: data.name }),
       {
-        onSuccess: (res) => {
-          console.log("Category updated:", res);
+        onSuccess: () => {
           queryClient.invalidateQueries(["getCategory"]);
           setIsCategoryEditing(false);
           refetch();

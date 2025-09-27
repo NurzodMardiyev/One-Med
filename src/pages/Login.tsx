@@ -7,7 +7,7 @@ import { LoadingOutlined } from "@ant-design/icons";
 import { RuleObject } from "antd/es/form";
 import { StoreValue } from "antd/es/form/interface";
 import { useCreateContext } from "../context/ContextApi";
-import logo from "../../public/images/logo.png";
+import logo from "../../public/images/logo.webp";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -63,37 +63,13 @@ export default function Login() {
       });
     },
     onError: (error) => {
-      console.log(error?.message);
-      openNotificationWithIcon("error", "Xatolik yuz berdi!", error.message);
+      openNotificationWithIcon("error", "Xatolik yuz berdi!", error?.message);
     },
   });
 
   const authTakeValue = (value: AuthPayload) => {
-    console.log(value);
     loginMutate(value);
   };
-
-  // const phoneMask = [
-  //   "+",
-  //   "9",
-  //   "9",
-  //   "8",
-  //   " ",
-  //   "(",
-  //   /[1-9]/,
-  //   /\d/,
-  //   ")",
-  //   " ",
-  //   /\d/,
-  //   /\d/,
-  //   /\d/,
-  //   "-",
-  //   /\d/,
-  //   /\d/,
-  //   "-",
-  //   /\d/,
-  //   /\d/,
-  // ];
 
   return (
     <div className="bg-[#ececec]">
@@ -102,7 +78,7 @@ export default function Login() {
         <div className="border border-[#D9D9D9] flex flex-col items-center gap-10 md:w-md w-full px-3 md:p-10 rounded-md bg-white py-[20px] md:py-auto">
           <div className=" flex flex-col items-center">
             <div className="bg-blue-200 p-4 rounded-full">
-              <img src={logo} alt="" className="w-[35px]" />
+              <img loading="lazy" src={logo} alt="" className="w-[35px]" />
             </div>
             <div className="flex flex-col items-center mt-4">
               <h1 className="text-[24px] font-semibold">Tizimga kirish</h1>

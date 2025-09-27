@@ -9,6 +9,8 @@ import { useQuery } from "react-query";
 import { UserProfileResponse } from "../pages/Settings";
 import { OneMedAdmin } from "../queries/query";
 import SecureStorage from "react-secure-storage";
+import { jwtDecode } from "jwt-decode";
+import { useLocation } from "react-router-dom";
 interface Data {
   fio: string;
   phone: string;
@@ -69,15 +71,28 @@ export default function ContextApiProvider({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const accessToken = SecureStorage.getItem("accessToken");
+  const accessToken = SecureStorage.getItem("accessToken") as string | null;
 
-  // Queru orqali user profile malumotlarini olish
+  function isTokenValid(token: string) {
+    try {
+      const decoded: { exp?: number } = jwtDecode(token);
+      if (!decoded.exp) return false;
+      return decoded.exp * 1000 > Date.now();
+    } catch {
+      return false;
+    }
+  }
+
+  const isValid = !!accessToken && isTokenValid(accessToken);
+
+  const location = useLocation();
+
   const { data: getUserProfileData } = useQuery<UserProfileResponse>({
-    queryKey: ["getUserProfile"], // category emas, user profile
+    queryKey: ["getUserProfile"],
     queryFn: () => OneMedAdmin.getUserProfile(),
-    staleTime: Infinity,
-    enabled: !!accessToken,
-    cacheTime: Infinity,
+    staleTime: 0, // 5 min
+    cacheTime: 0, // 10 min
+    enabled: !!isValid && location.pathname !== "/",
   });
 
   return (

@@ -198,10 +198,9 @@ export default function EmployeeInfo() {
         setEditMode(false);
       },
       onError: (err) => {
-        console.error("Update employee error:", err);
         openNotificationWithIcon(
           "error",
-          err.message,
+          err?.message,
           "Xatolik yuz berdi qaytadan urunib ko'ring iltimos!"
         );
       },
@@ -222,10 +221,9 @@ export default function EmployeeInfo() {
       setIsModalPassOpen(false);
     },
     onError: (err) => {
-      console.error("Update employee error:", err);
       openNotificationWithIcon(
         "error",
-        err.message,
+        err?.message,
         "Xatolik yuz berdi qaytadan urunib ko'ring iltimos!"
       );
     },

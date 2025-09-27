@@ -425,9 +425,6 @@ export default function PatientsInfo() {
     onSuccess: () => {
       // Diagnos qo‘shilganda cache yangilash
       queryClient.invalidateQueries(["Recipes", id, visitId]);
-      console.log("diagnos qo'shildi");
-
-      // ❌ setDiagnosModal(false);   // <-- buning o‘rniga modalni yopma
     },
   });
 
@@ -443,7 +440,6 @@ export default function PatientsInfo() {
   });
 
   const handleTextDiagnos = (visitId: string) => {
-    console.log("visitid", visitId);
     setVisitId(visitId);
     setDiagnosModal(true);
   };
@@ -454,7 +450,6 @@ export default function PatientsInfo() {
   const handleCancelDiagnos = () => setDiagnosModal(false);
 
   const sendDiagnos = (values: any) => {
-    console.log(values.diagnosis);
     diagnosMuatate({
       id: visitId,
       obj: values,
@@ -1035,7 +1030,7 @@ export default function PatientsInfo() {
                           📋 Mavjud retseptlar
                         </h3>
                         <div className="space-y-2">
-                          {visitRecipes?.data?.recipes.map(
+                          {visitRecipes?.data?.recipes?.map(
                             (r: any, idx: number) => (
                               <Card
                                 key={r.id}
@@ -1175,7 +1170,7 @@ export default function PatientsInfo() {
                 !patientVisitesData?.data?.length ? (
                   <Empty />
                 ) : (
-                  patientVisitesData?.data.map((item) => {
+                  patientVisitesData?.data?.map((item) => {
                     const formatted = dayjs(item.created_at).format(
                       "YYYY-MM-DD HH:mm"
                     );
@@ -1226,13 +1221,13 @@ export default function PatientsInfo() {
                             <span className="font-[400] text-[#000]">
                               Servislar:
                             </span>
-                            {item.services.map((i, index) => (
+                            {item.services?.map((i, index) => (
                               <span
                                 key={i.id || index}
                                 className="text-blue-500"
                               >
                                 {i.name}
-                                {index !== item.services.length - 1 && ", "}
+                                {index !== item.services?.length - 1 && ", "}
                               </span>
                             ))}
                           </li>

@@ -4,9 +4,9 @@ import type { MenuProps } from "antd";
 import { Menu } from "antd";
 import { useCreateContext } from "../context/ContextApi";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FaMedrt } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
 import { PiUserListBold } from "react-icons/pi";
+import logo from "../../public/images/logo.webp";
 import "../App.css";
 
 type MenuItem = Required<MenuProps>["items"][number];
@@ -15,7 +15,6 @@ export default function SidebarDoctor() {
   const { collapsed, setCollapsed } = useCreateContext();
   const navigate = useNavigate();
   const location = useLocation();
-  console.log(location);
 
   const toggleCollapsed = () => {
     setCollapsed(!collapsed);
@@ -49,7 +48,11 @@ export default function SidebarDoctor() {
           items={[
             {
               key: "/",
-              icon: <FaMedrt className="!text-[26px] !text-blue-500 " />,
+              icon: (
+                <div>
+                  <img loading="lazy" src={logo} alt="" className="w-[35px]" />
+                </div>
+              ),
               label: (
                 <p className="font-bold text-[24px] text-blue-500">One Med</p>
               ),

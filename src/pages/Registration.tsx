@@ -193,7 +193,7 @@ export default function Registration() {
     useMutation<PatientResponse, Error, PatientRequest>(
       (obj) => OneMedAdmin.addPatient(obj),
       {
-        onSuccess: (data) => {
+        onSuccess: () => {
           queryClient.invalidateQueries();
           // showMessage("Yangi bemor muvaffaqqiyatli qo'shildi!");
           // ✅ Forma tozalash
@@ -202,12 +202,9 @@ export default function Registration() {
           setSelectedPatientId(null); // ✅ yangi ID saqlaymiz
           setIsFormDisabled(false); // yangi bemorda forma tahrirlanadi
           openNotificationWithIcon("success", "Yangi bemor qo‘shildi");
-          console.log("Yangi bemor qo‘shildi:", data);
-          // console.log("ishlavotti");
         },
         onError: (err) => {
           openNotificationWithIcon("error", err.message);
-          console.log("Error");
           // showMessage("Yangi bemor muvaffaqqiyatli qo'shildi!");
           // error("Xatolik yuz berdi!");
         },
@@ -219,12 +216,11 @@ export default function Registration() {
     useMutation<PatientResponse, Error, { id: string; obj: PatientRequest }>(
       ({ id, obj }) => OneMedAdmin.updatePatient(id, obj),
       {
-        onSuccess: (data) => {
+        onSuccess: () => {
           queryClient.invalidateQueries();
           form.resetFields();
           setIsFormDisabled(false);
           setSelectedPatientId(null);
-          console.log("Bemor yangilandi:", data);
           openNotificationWithIcon("success", "Bemor yangilandi");
           // success("Bemor muvaffaqqiyatli yangilandi!");
         },
@@ -356,7 +352,6 @@ export default function Registration() {
       });
     },
     onError: () => {
-      console.error("Bemor topilmadi, yangi kiritish kerak.");
       // setSelectedPatientId(null);
       form.resetFields();
     },
@@ -374,9 +369,6 @@ export default function Registration() {
       console.error("Avval bemorni qo'shing!");
       return;
     }
-    console.log("Bemor ID:", selectedPatientId);
-    console.log("Shifokor ID:", handleSelectDoctorState);
-    console.log("Servislar:", selectedServices);
 
     addNewVisitMutate(selectedPatientId);
   };
