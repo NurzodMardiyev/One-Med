@@ -12,12 +12,12 @@ import { UpdateProfilePayload, UserProfileResponse } from "../pages/Settings";
 
 
 // Apilar va versiyalar
-const  baby = "https://api.babyortomed.one-med.uz"
-const  bm = "https://api.bm.one-med.uz"
-const titan = "https://api.titan-renesans.one-med.uz"
-const nero = "https://api.nerolife.one-med.uz"
+const  baby = "https://api.babyortomed.one-med.info"
+const  bm = "https://api.bm.one-med.info"
+const titan = "https://api.titan-renesans.one-med.info"
+const nero = "https://api.nerolife.one-med.info"
 
-export const baseApi = bm;
+export const baseApi = nero;
 
 console.log(baby, bm, titan, nero)
 

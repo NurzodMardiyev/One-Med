@@ -17,10 +17,13 @@ import {
   notification,
   Space,
   DatePicker,
+  Upload,
   // Upload,
 } from "antd";
 import {
   AppstoreOutlined,
+  DeleteOutlined,
+  DownloadOutlined,
   ExclamationCircleOutlined,
   LoadingOutlined,
   MinusCircleOutlined,
@@ -47,6 +50,11 @@ import {
   OneMedAdmin,
 } from "../queries/query";
 import { PatientRequest, PatientResponse } from "../pages/Registration";
+import { UploadOutlined } from "@ant-design/icons";
+import type { UploadFile, UploadProps } from "antd";
+import type { UploadRequestOption as RcCustomRequestOptions } from "rc-upload/lib/interface";
+import apiaxios from "./api";
+import SecureStorage from "react-secure-storage";
 
 // ========================= TYPES =========================
 // Pasport, ID, hujjatlar uchun
@@ -177,6 +185,7 @@ export interface RecipesResponse {
   message: string;
   data: {
     recipes: Recipe[];
+    file: string;
   };
 }
 
@@ -430,14 +439,15 @@ export default function PatientsInfo() {
 
   const [visitId, setVisitId] = useState("");
 
-  const { data: visitRecipes } = useQuery<RecipesResponse>({
-    queryKey: ["Recipes", id, visitId], // paramlarni key ichiga qo‘shamiz
-    queryFn: ({ queryKey }) => {
-      const [, id, vId] = queryKey as [string, string, string];
-      return OneMedAdmin.recipesList(id, vId);
-    },
-    enabled: !!id && !!visitId, // faqat id va visitId bo‘lsa ishlaydi
-  });
+  const { data: visitRecipes, isLoading: visitResipesLoading } =
+    useQuery<RecipesResponse>({
+      queryKey: ["Recipes", id, visitId], // paramlarni key ichiga qo‘shamiz
+      queryFn: ({ queryKey }) => {
+        const [, id, vId] = queryKey as [string, string, string];
+        return OneMedAdmin.recipesList(id, vId);
+      },
+      enabled: !!id && !!visitId, // faqat id va visitId bo‘lsa ishlaydi
+    });
 
   const handleTextDiagnos = (visitId: string) => {
     setVisitId(visitId);
@@ -467,7 +477,12 @@ export default function PatientsInfo() {
   const logo2 = patientData?.data.last_name.slice(0, 1);
 
   // Gender
-  const gender = patientData?.data.gender === "male" ? "Erkak" : "Ayol";
+  const gender =
+    patientData?.data.gender === "male"
+      ? "Erkak"
+      : patientData?.data.gender === "female"
+      ? "Ayol"
+      : "";
 
   // TreeSelect uchun service daraxti
 
@@ -571,6 +586,140 @@ export default function PatientsInfo() {
   };
 
   const currentPath = location.pathname.split("/")[1] || "doctor";
+
+  // --------------- File yuklash -----------------
+
+  const backendFileUrl = visitRecipes?.data?.file; // backenddan kelgan URL
+
+  const defaultFileList: UploadFile[] = backendFileUrl
+    ? [
+        {
+          uid: "-1", // unikal id
+          name: backendFileUrl.split("/").pop() || "file", // fayl nomi
+          status: "done", // yuklangan deb belgilaymiz
+          url: backendFileUrl, // yuklab olish uchun link
+        },
+      ]
+    : [];
+
+  const customRequest = async (options: RcCustomRequestOptions) => {
+    const { file, onSuccess, onError } = options;
+
+    const formData = new FormData();
+    formData.append("file", file as Blob);
+
+    try {
+      const response = await apiaxios.patch(
+        `/v1/patients/${id}/visits/${visitId}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (onSuccess) onSuccess(response.data, file as any);
+    } catch (err) {
+      if (onError) onError(err as any);
+    }
+  };
+
+  const props: UploadProps = {
+    name: "file",
+    customRequest,
+    maxCount: 1,
+    multiple: false,
+    defaultFileList,
+    onChange(info) {
+      if (info.file.status !== "uploading") {
+        console.log(info.file, info.fileList);
+      }
+      if (info.file.status === "done") {
+        openNotificationWithIcon(
+          "success",
+          "Muvaffaqqiyatli",
+          "Fayl muvaffaqiyatli yuklandi!"
+        );
+      } else if (info.file.status === "error") {
+        openNotificationWithIcon(
+          "error",
+          "Xatolik yuz berdi",
+          "Fayl yuklashda xatolik iltimos qaytadan urinib ko'ring!"
+        );
+      }
+    },
+    onRemove: async () => {
+      try {
+        await apiaxios.patch(`/v1/patients/${id}/visits/${visitId}`, {
+          file: null,
+        });
+        openNotificationWithIcon(
+          "success",
+          "Muvaffaqqiyatli o'chirildi",
+          "Fayl muvaffaqiyatli o'chirildi!"
+        );
+        return true;
+      } catch (err) {
+        openNotificationWithIcon(
+          "error",
+          "Xatolik yuz berdi",
+          "Fayl o'chirishda xatolik iltimos qaytadan urinib ko'ring!"
+        );
+        return false;
+      }
+    },
+    // 🔑 custom UI render
+    itemRender: (originNode, file, fileList, actions) => {
+      console.log(originNode, fileList);
+      return (
+        <div
+          className="justify-between"
+          style={{ display: "flex", alignItems: "center", gap: "8px" }}
+        >
+          {/* Fayl nomi */}
+          <div>
+            <a href={file.url} target="_blank" rel="noopener noreferrer">
+              {file.name}
+            </a>
+          </div>
+
+          {/* Yuklab olish tugmasi */}
+          <div>
+            <Button
+              type="link"
+              icon={<DownloadOutlined />}
+              onClick={() => {
+                const link = document.createElement("a");
+                link.href = file.url || "";
+                link.download = file.name;
+                link.click();
+              }}
+            >
+              Yuklab olish
+            </Button>
+
+            {/* O‘chirish tugmasi */}
+            <Button
+              type="link"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={actions.remove}
+            />
+          </div>
+        </div>
+      );
+    },
+  };
+
+  // const handleDownload = (file: string) => {
+  //   const link = document.createElement("a");
+  //   link.href = file;
+  //   link.setAttribute("download", "fayl.docx"); // fayl nomini o'zing belgilab qo'yish mumkin
+  //   document.body.appendChild(link);
+  //   link.click();
+  //   link.remove();
+  // };
   // ========================= LOADING / ERROR =========================
   if (isLoading) {
     return (
@@ -1004,7 +1153,11 @@ export default function PatientsInfo() {
 
               {/* Modal tashfis qo'shish */}
               <Modal
-                title="🩺 Tashhis qo'yish"
+                title={`🩺 ${
+                  currentPath === "doctor"
+                    ? " Tashhis qo'yish"
+                    : "Tashhislar ro'yhati"
+                }`}
                 open={diagnosModal}
                 onOk={handleOkDiagnos}
                 onCancel={handleCancelDiagnos}
@@ -1012,7 +1165,7 @@ export default function PatientsInfo() {
                 width={700}
                 className="rounded-xl"
               >
-                {diagnosLoading ? (
+                {visitResipesLoading || diagnosLoading ? (
                   <div className="flex justify-center items-center py-10">
                     <Spin indicator={<LoadingOutlined spin />} size="large" />
                   </div>
@@ -1035,7 +1188,7 @@ export default function PatientsInfo() {
                               <Card
                                 key={r.id}
                                 size="small"
-                                className="rounded-md border border-gray-200 shadow-sm "
+                                className="rounded-md border border-gray-200 shadow-sm !mb-1 "
                               >
                                 <div className="flex justify-between items-center mb-1">
                                   <div>
@@ -1054,6 +1207,55 @@ export default function PatientsInfo() {
                       </div>
                     ) : (
                       <Empty />
+                    )}
+
+                    {currentPath !== "doctor" && visitRecipes?.data?.file && (
+                      <Card
+                        size="small"
+                        className="rounded-md border border-gray-200 shadow-sm mt-4"
+                      >
+                        <div className="flex justify-between items-center">
+                          <p className="font-medium">
+                            📎 {visitRecipes.data.file.split("/").pop()}
+                          </p>
+                          <Button
+                            type="primary"
+                            size="small"
+                            onClick={async () => {
+                              try {
+                                const response = await fetch(
+                                  visitRecipes.data.file,
+                                  {
+                                    method: "GET",
+                                    headers: {
+                                      Authorization: `Bearer ${SecureStorage.getItem(
+                                        "accessToken"
+                                      )}`,
+                                    },
+                                  }
+                                );
+                                const blob = await response.blob();
+                                const url = window.URL.createObjectURL(blob);
+
+                                const link = document.createElement("a");
+                                link.href = url;
+                                link.download =
+                                  visitRecipes.data.file.split("/").pop() ||
+                                  "file";
+                                document.body.appendChild(link);
+                                link.click();
+                                link.remove();
+
+                                window.URL.revokeObjectURL(url);
+                              } catch (error) {
+                                console.error("Yuklab olishda xatolik:", error);
+                              }
+                            }}
+                          >
+                            Yuklab olish
+                          </Button>
+                        </div>
+                      </Card>
                     )}
 
                     {/* Yangi retsept qo'shish formi */}
@@ -1106,15 +1308,27 @@ export default function PatientsInfo() {
                               ))}
 
                               <Form.Item>
-                                <Button
-                                  type="dashed"
-                                  onClick={() => add()}
-                                  block
-                                  icon={<PlusOutlined />}
-                                  className="rounded-lg border-dashed  hover:shadow-md transition-all duration-150"
-                                >
-                                  Yangi retsept qo'shish
-                                </Button>
+                                <div className=" mt-2 gap-2 upload">
+                                  <Button
+                                    type="dashed"
+                                    onClick={() => add()}
+                                    block
+                                    icon={<PlusOutlined />}
+                                    className=" rounded-lg border-dashed  hover:shadow-md transition-all duration-150"
+                                  >
+                                    Yangi retsept qo'shish
+                                  </Button>
+                                  <Upload {...props} className="!w-full">
+                                    <Button
+                                      type="dashed"
+                                      block
+                                      icon={<UploadOutlined />}
+                                      className="!w-full"
+                                    >
+                                      File yuklash
+                                    </Button>
+                                  </Upload>
+                                </div>
                               </Form.Item>
                             </div>
                           )}
@@ -1198,54 +1412,56 @@ export default function PatientsInfo() {
                           </span>
                         </div>
 
-                        <ul className="mt-3 flex flex-col gap-1">
-                          <li className="flex items-center md:text-[14px] text-[12px] gap-2 text-[#676767]">
-                            <span className="font-[400] text-[#000]">
-                              Status:
-                            </span>
-                            <div
-                              className={`${
-                                item.status === "pending"
-                                  ? "bg-[#afc4d9]"
-                                  : item.status === "in_progress"
-                                  ? "bg-[#CDF4E4]"
-                                  : item.status === "cancelled"
-                                  ? "bg-[#c47d7d]"
-                                  : "bg-[#2ef6a3]"
-                              } px-3 py-0.5 text-white rounded-[4px]`}
-                            >
-                              {status}
-                            </div>
-                          </li>
-                          <li className="flex items-center md:text-[14px] text-[12px] gap-2 text-[#676767]">
-                            <span className="font-[400] text-[#000]">
-                              Servislar:
-                            </span>
-                            {item.services?.map((i, index) => (
-                              <span
-                                key={i.id || index}
-                                className="text-blue-500"
-                              >
-                                {i.name}
-                                {index !== item.services?.length - 1 && ", "}
-                              </span>
-                            ))}
-                          </li>
-                          {item.diagnosis !== null && (
+                        <div className="flex justify-between items-end">
+                          <ul className="mt-3 flex flex-col gap-1">
                             <li className="flex items-center md:text-[14px] text-[12px] gap-2 text-[#676767]">
                               <span className="font-[400] text-[#000]">
-                                Tashhis:
+                                Status:
                               </span>
-                              {item.diagnosis}
+                              <div
+                                className={`${
+                                  item.status === "pending"
+                                    ? "bg-[#afc4d9]"
+                                    : item.status === "in_progress"
+                                    ? "bg-[#CDF4E4]"
+                                    : item.status === "cancelled"
+                                    ? "bg-[#c47d7d]"
+                                    : "bg-[#2ef6a3]"
+                                } px-3 py-0.5 text-white rounded-[4px]`}
+                              >
+                                {status}
+                              </div>
                             </li>
-                          )}
-                          <li className="flex items-center md:text-[14px] text-[12px] gap-2 text-[#676767]">
-                            <span className="font-[400] text-[#000]">
-                              To'lov:
-                            </span>
-                            {item.total_price} so'm
-                          </li>
-                        </ul>
+                            <li className="flex items-center md:text-[14px] text-[12px] gap-2 text-[#676767]">
+                              <span className="font-[400] text-[#000]">
+                                Servislar:
+                              </span>
+                              {item.services?.map((i, index) => (
+                                <span
+                                  key={i.id || index}
+                                  className="text-blue-500"
+                                >
+                                  {i.name}
+                                  {index !== item.services?.length - 1 && ", "}
+                                </span>
+                              ))}
+                            </li>
+                            {item.diagnosis !== null && (
+                              <li className="flex items-center md:text-[14px] text-[12px] gap-2 text-[#676767]">
+                                <span className="font-[400] text-[#000]">
+                                  Tashhis:
+                                </span>
+                                {item.diagnosis}
+                              </li>
+                            )}
+                            <li className="flex items-center md:text-[14px] text-[12px] gap-2 text-[#676767]">
+                              <span className="font-[400] text-[#000]">
+                                To'lov:
+                              </span>
+                              {item.total_price} so'm
+                            </li>
+                          </ul>
+                        </div>
                       </div>
                     );
                   })

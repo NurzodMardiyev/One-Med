@@ -38,9 +38,9 @@ export default function SidebarDoctor() {
     <div
       className={`min-h-screen ${
         collapsed ? "w-[80px]" : "w-[300px]"
-      }  flex flex-col`}
+      }  flex flex-col `}
     >
-      <div className="mb-4">
+      <div className="">
         <Menu
           onClick={handleEvent}
           inlineCollapsed={collapsed}
@@ -67,7 +67,7 @@ export default function SidebarDoctor() {
         mode="inline"
         inlineCollapsed={collapsed}
         items={items}
-        className="!border-none"
+        className="!border-none flex-1 !pt-4"
       />
       <Menu
         onClick={handleEventLogOut}
@@ -88,7 +88,7 @@ export default function SidebarDoctor() {
               label: "Sidebar",
             },
           ]}
-          className=" !border-none !mb-4 sidebarBtn"
+          className=" !border-none !pb-4 sidebarBtn"
         />
       </div>
     </div>
