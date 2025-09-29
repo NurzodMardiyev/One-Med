@@ -112,7 +112,10 @@ export default function EmployeeInfo() {
   };
 
   // 1. xodim ma’lumotlari
-  const { data: employeeData } = useQuery<EmployeeResponse, Error>({
+  const { data: employeeData, isLoading: employeeDataLoading } = useQuery<
+    EmployeeResponse,
+    Error
+  >({
     queryKey: ["employee", id],
     queryFn: () => OneMedAdmin.getEmployee(id!),
     staleTime: Infinity,
@@ -355,6 +358,13 @@ export default function EmployeeInfo() {
     );
 
   // const takeServicesFromBack = () => setEnable(true);
+  if (employeeDataLoading) {
+    return (
+      <div className="w-full justify-center items-center flex h-screen bg-white/20">
+        <Spin indicator={<LoadingOutlined spin />} size="large" />
+      </div>
+    );
+  }
 
   return (
     <div className="pr-[10px] md:pr-auto">
@@ -374,7 +384,14 @@ export default function EmployeeInfo() {
           <div className="flex items-center gap-3">
             <div>
               <h2 className="md:text-[22px] text-[18px] font-[600] mb-[-5px]">
-                Doctor ma'lumotlari
+                {employeeData?.data.role === "admin"
+                  ? "Admin"
+                  : employeeData?.data.role === "registrator"
+                  ? "Registrator"
+                  : employeeData?.data.role === "doctor"
+                  ? "Doctor"
+                  : ""}{" "}
+                ma'lumotlari
               </h2>
               <p className="text-[#9D99AB] font-[300] md:text-[14px] text-[12px]">
                 To'liq ma'lumot va jadval
@@ -385,13 +402,17 @@ export default function EmployeeInfo() {
 
         {/* Edit tugmasi */}
         <div className="flex gap-3 flex-col-reverse md:flex-row">
-          <button
-            onClick={showDeleteModal}
-            className="cursor-pointer text-red-500 border-red-500 md:px-6 px-3 md:py-2 py-1.5 border  rounded-md md:text-[14px] text-[12px] flex md:gap-2 hover:bg-[#ff121218] transition-all duration-150"
-          >
-            <GoTrash className="md:text-[18px] text-[16px]" />
-            O'chirish
-          </button>
+          {employeeData?.data.role === "admin" ? (
+            ""
+          ) : (
+            <button
+              onClick={showDeleteModal}
+              className="cursor-pointer text-red-500 border-red-500 md:px-6 px-3 md:py-2 py-1.5 border  rounded-md md:text-[14px] text-[12px] flex md:gap-2 hover:bg-[#ff121218] transition-all duration-150"
+            >
+              <GoTrash className="md:text-[18px] text-[16px]" />
+              O'chirish
+            </button>
+          )}
           <button
             onClick={showModalPassword}
             className="cursor-pointer text-yellow-500 border-yellow-500 md:px-6 px-3 md:py-2 py-1.5 border  rounded-md md:text-[14px] text-[12px] flex md:gap-2 hover:bg-[#ffbc1218] transition-all duration-150"

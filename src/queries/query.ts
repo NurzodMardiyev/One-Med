@@ -9,6 +9,7 @@ import { UpdateProfilePayload, UserProfileResponse } from "../pages/Settings";
 // https://api.bm.one-med.uz    /// ----- Andijondagi med klinika uchun
 // https://api.titan-renesans.one-med.uz     /// ---- titan renasans klinikasi uchun
 // https://api.nerolife.one-med.uz   /// 8083
+// https://api.murtazayev.one-med.uz   /// 8084
 
 
 // Apilar va versiyalar
@@ -16,10 +17,11 @@ const  baby = "https://api.babyortomed.one-med.info"
 const  bm = "https://api.bm.one-med.info"
 const titan = "https://api.titan-renesans.one-med.info"
 const nero = "https://api.nerolife.one-med.info"
+const murtazayev = "https://api.murtazayev.one-med.info"
 
-export const baseApi = nero;
+export const baseApi = baby;
 
-console.log(baby, bm, titan, nero)
+console.log(baby, bm, titan, nero, murtazayev)
 
 type ServiceItem = {
   id: string;
@@ -767,6 +769,11 @@ deletePatient: async (id: string): Promise<DeleteResponse> => {
 
 deleteEmployee: async (id: string): Promise<DeleteResponse> => {
   const response = await api.delete(`${baseApi}/v1/users/${id}`);
+  return response.data || { message: "Deleted successfully", success: true };
+},
+
+deleteVisit: async (id: string, visitId: string): Promise<any> => {
+  const response = await api.delete(`${baseApi}/v1/patients/${id}/visits/${visitId}`);
   return response.data || { message: "Deleted successfully", success: true };
 },
 }

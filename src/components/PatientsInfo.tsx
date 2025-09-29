@@ -18,6 +18,7 @@ import {
   Space,
   DatePicker,
   Upload,
+  Popconfirm,
   // Upload,
 } from "antd";
 import {
@@ -51,7 +52,7 @@ import {
 } from "../queries/query";
 import { PatientRequest, PatientResponse } from "../pages/Registration";
 import { UploadOutlined } from "@ant-design/icons";
-import type { UploadFile, UploadProps } from "antd";
+import type { PopconfirmProps, UploadFile, UploadProps } from "antd";
 import type { UploadRequestOption as RcCustomRequestOptions } from "rc-upload/lib/interface";
 import apiaxios from "./api";
 import SecureStorage from "react-secure-storage";
@@ -720,6 +721,38 @@ export default function PatientsInfo() {
   //   link.click();
   //   link.remove();
   // };
+
+  // tashrifni o'chirish
+  const [openPopap, setOpenPopap] = useState(false);
+  const { mutateAsync: deleteVisit, isLoading: deleteVisitLoading } =
+    useMutation<any, Error, { id: string; visitId: string }>(
+      ({ id, visitId }) => OneMedAdmin.deleteVisit(id, visitId),
+      {
+        onSuccess: () => {
+          visitsFetch();
+          setDiagnosModal(false);
+          setOpenPopap(false);
+          setVisitId("");
+          console.log("delete Visit");
+        },
+        onError: (err) => {
+          console.log(err);
+        },
+      }
+    );
+
+  const confirmVisit: PopconfirmProps["onConfirm"] = async () => {
+    setOpenPopap(false);
+    if (id) {
+      await deleteVisit({ id, visitId });
+    }
+  };
+
+  const cancel: PopconfirmProps["onCancel"] = (e) => {
+    setOpenPopap(false);
+    console.log(e);
+  };
+
   // ========================= LOADING / ERROR =========================
   if (isLoading) {
     return (
@@ -896,6 +929,7 @@ export default function PatientsInfo() {
                 open={isVisitOpen}
                 onCancel={handleCancel}
                 footer={false}
+                maskClosable={false}
                 centered
               >
                 <Form
@@ -1153,11 +1187,6 @@ export default function PatientsInfo() {
 
               {/* Modal tashfis qo'shish */}
               <Modal
-                title={`🩺 ${
-                  currentPath === "doctor"
-                    ? " Tashhis qo'yish"
-                    : "Tashhislar ro'yhati"
-                }`}
                 open={diagnosModal}
                 onOk={handleOkDiagnos}
                 onCancel={handleCancelDiagnos}
@@ -1165,6 +1194,31 @@ export default function PatientsInfo() {
                 width={700}
                 className="rounded-xl"
               >
+                <div className="flex items-start justify-between">
+                  <h2 className="text-[16px] font-[500]">
+                    {`🩺 ${
+                      currentPath === "doctor"
+                        ? " Tashhis qo'yish"
+                        : "Tashhislar ro'yhati"
+                    }`}
+                  </h2>
+                  <Popconfirm
+                    title="Bemor tashrifini o'chirish"
+                    description={`Haqiqatdan ham o'chirmoqchimisiz,\n eslataman bu amalni bekor qila olmaysiz!`}
+                    onConfirm={confirmVisit}
+                    onCancel={cancel}
+                    open={openPopap}
+                    className="mr-[30px]"
+                    okText="Ha"
+                    onOpenChange={(visible) => setOpenPopap(visible)}
+                    cancelText="Yo'q"
+                    okButtonProps={{ loading: deleteVisitLoading }}
+                  >
+                    <Button danger onClick={() => setOpenPopap(true)}>
+                      O'chirish
+                    </Button>
+                  </Popconfirm>
+                </div>
                 {visitResipesLoading || diagnosLoading ? (
                   <div className="flex justify-center items-center py-10">
                     <Spin indicator={<LoadingOutlined spin />} size="large" />

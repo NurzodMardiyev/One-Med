@@ -4,21 +4,19 @@ import SecureStorage from "react-secure-storage";
 
 
 // Apilar va versiyalar
-const  baby = "https://api.babyortomed.one-med.info"
-const  bm = "https://api.bm.one-med.info"
-const titan = "https://api.titan-renesans.one-med.info"
-const nero = "https://api.nerolife.one-med.info"
+const  baby = "https://api.babyortomed.one-med.info"    /// 8080
+const  bm = "https://api.bm.one-med.info"   /// 8081
+const titan = "https://api.titan-renesans.one-med.info"   /// 8082
+const nero = "https://api.nerolife.one-med.info"   /// 8083
+const murtazayev = "https://api.murtazayev.one-med.info"    /// 8084
 
 
-console.log(baby, bm, titan, nero)
+console.log(baby, bm, titan, nero, murtazayev)
 
 const api = axios.create({
-  baseURL: nero,
+  baseURL: baby,
 });
-// https://api.babyortomed.one-med.uz   /// 8080
-// https://api.bm.one-med.uz   /// 8081
-// https://api.titan-renesans.one-med.uz   /// 8082
-// https://api.nerolife.one-med.uz   /// 8083
+
 
 // Har bir so‘rovga access token qo‘shish
 api.interceptors.request.use(
@@ -52,7 +50,7 @@ api.interceptors.response.use(
 
       try {
         const response = await axios.post(
-          `${nero}/v1/auth/login`,
+          `${baby}/v1/auth/login`,
           { refresh: refreshToken }
         );
 
