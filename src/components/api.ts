@@ -1,22 +1,20 @@
 import axios from "axios";
 import SecureStorage from "react-secure-storage";
 
-
-
 // Apilar va versiyalar
-const  baby = "https://api.babyortomed.one-med.info"    /// 8080
-const  bm = "https://api.bm.one-med.info"   /// 8081
-const titan = "https://api.titan-renesans.one-med.info"   /// 8082
-const nero = "https://api.nerolife.one-med.info"   /// 8083
-const murtazayev = "https://api.murtazayev.one-med.info"    /// 8084
+const baby = "https://api.babyortomed.one-med.info"; /// 8080
+const bm = "https://api.bm.one-med.info"; /// 8081
+const titan = "https://api.titan-renesans.one-med.info"; /// 8082
+const nero = "https://api.nerolife.one-med.info"; /// 8083
+const murtazayev = "https://api.murtazayev.one-med.info"; /// 8084
+const ideal = "https://api.ideal.one-med.info"; /// 8085
+const estelife = "https://api.estelife.one-med.info"; /// 8086
 
-
-console.log(baby, bm, titan, nero, murtazayev)
+console.log(baby, bm, titan, nero, murtazayev, ideal);
 
 const api = axios.create({
-  baseURL: baby,
+  baseURL: estelife,
 });
-
 
 // Har bir so‘rovga access token qo‘shish
 api.interceptors.request.use(
@@ -49,10 +47,9 @@ api.interceptors.response.use(
       }
 
       try {
-        const response = await axios.post(
-          `${baby}/v1/auth/login`,
-          { refresh: refreshToken }
-        );
+        const response = await axios.post(`${estelife}/v1/auth/login`, {
+          refresh: refreshToken,
+        });
 
         const newAccessToken = response.data.access_token;
         SecureStorage.setItem("accessToken", newAccessToken);

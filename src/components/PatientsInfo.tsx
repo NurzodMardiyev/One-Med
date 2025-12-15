@@ -1,5 +1,5 @@
 // ========================= IMPORTS =========================
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import {
@@ -56,6 +56,8 @@ import type { PopconfirmProps, UploadFile, UploadProps } from "antd";
 import type { UploadRequestOption as RcCustomRequestOptions } from "rc-upload/lib/interface";
 import apiaxios from "./api";
 import SecureStorage from "react-secure-storage";
+import { useReactToPrint } from "react-to-print";
+import Receipt from "./Check";
 
 // ========================= TYPES =========================
 // Pasport, ID, hujjatlar uchun
@@ -187,7 +189,41 @@ export interface RecipesResponse {
   data: {
     recipes: Recipe[];
     file: string;
+    created_at: string;
+    services: Service[];
+    doctor: string;
+    room_number: string;
+    queue: string;
+    total_price: number;
   };
+}
+interface visitData {
+  created_at: string;
+  services: Service[];
+  doctor: string;
+  room_number: string;
+  queue: string;
+  total_price: number;
+}
+interface VisitResponse {
+  data: visitData;
+}
+
+interface VisitPayload {
+  doctor: string;
+  services: string[];
+}
+interface ReceiptData {
+  patientName: string | undefined;
+  patientLastName: string | undefined;
+  patientDateOfBirth?: string | undefined;
+  region?: string | undefined;
+  date: string;
+  services: Service[];
+  doctor: string;
+  room: string;
+  queue_number: string;
+  payment: number;
 }
 
 type NotificationType = "success" | "info" | "warning" | "error";
@@ -392,13 +428,32 @@ export default function PatientsInfo() {
   });
 
   // ========================= MUTATION =========================
+
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
+  const [receiptDataBool, setReceiptDataBool] = useState(false);
+
+  useEffect(() => {
+    if (receiptData && receiptDataBool) {
+      handlePrint();
+      //setReceiptData(null); // data reset
+      setReceiptDataBool(false); // flag reset
+    }
+  }, [receiptData, receiptDataBool]);
+
+  const componentRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = useReactToPrint({
+    contentRef: componentRef, // 🔑 yangi versiyada contentRef ishlatiladi
+    documentTitle: "Bemor cheki", // ixtiyoriy
+  });
   const queryClient = useQueryClient();
   const { mutate: addEmployeMutate, isLoading: addEmpLoading } = useMutation<
-    any,
-    Error,
-    { doctor: string; services: string[] }
+    VisitResponse, // success response
+    Error, // error
+    VisitPayload
   >((obj) => OneMedAdmin.addNewVisit(id!, obj), {
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log(data);
       queryClient.invalidateQueries(["patient", id]); // bemorni qayta chaqirish
       visitsFetch();
       openNotificationWithIcon(
@@ -407,6 +462,19 @@ export default function PatientsInfo() {
         "Yangi tashrif qo'shish operatsiyasi muvaffaqiyatli bajarildi!"
       );
       form.resetFields();
+      setReceiptData({
+        patientName: patientData?.data.first_name,
+        patientLastName: patientData?.data.last_name,
+        patientDateOfBirth: patientData?.data.date_of_birth,
+        region: patientData?.data.region,
+        date: data.data.created_at,
+        services: data.data.services,
+        doctor: data.data.doctor,
+        room: data.data.room_number,
+        queue_number: data.data.queue,
+        payment: data.data.total_price,
+      });
+      setReceiptDataBool(true);
       setIsVisitOpen(false); // modal yopish
     },
     onError: (error) => {
@@ -449,6 +517,27 @@ export default function PatientsInfo() {
       },
       enabled: !!id && !!visitId, // faqat id va visitId bo‘lsa ishlaydi
     });
+
+  // console.log(patientData);
+
+  useEffect(() => {
+    if (visitRecipes?.data) {
+      const v = visitRecipes.data;
+
+      setReceiptData({
+        patientName: patientData?.data.first_name,
+        patientLastName: patientData?.data.last_name,
+        patientDateOfBirth: patientData?.data.date_of_birth,
+        region: patientData?.data.region,
+        date: v.created_at,
+        services: v.services,
+        doctor: v.doctor,
+        room: v.room_number,
+        queue_number: v.queue,
+        payment: v.total_price,
+      });
+    }
+  }, [visitRecipes]);
 
   const handleTextDiagnos = (visitId: string) => {
     setVisitId(visitId);
@@ -774,6 +863,11 @@ export default function PatientsInfo() {
   return (
     <div className="pr-[10px] md:pr-auto">
       {/* HEADER */}
+
+      <div style={{ display: "none" }}>
+        {receiptData && <Receipt ref={componentRef} data={receiptData} />}
+      </div>
+
       <div className="flex items-center justify-between my-4">
         {/* Orqaga qaytish */}
         {contextHolder}
@@ -1202,22 +1296,30 @@ export default function PatientsInfo() {
                         : "Tashhislar ro'yhati"
                     }`}
                   </h2>
-                  <Popconfirm
-                    title="Bemor tashrifini o'chirish"
-                    description={`Haqiqatdan ham o'chirmoqchimisiz,\n eslataman bu amalni bekor qila olmaysiz!`}
-                    onConfirm={confirmVisit}
-                    onCancel={cancel}
-                    open={openPopap}
-                    className="mr-[30px]"
-                    okText="Ha"
-                    onOpenChange={(visible) => setOpenPopap(visible)}
-                    cancelText="Yo'q"
-                    okButtonProps={{ loading: deleteVisitLoading }}
-                  >
-                    <Button danger onClick={() => setOpenPopap(true)}>
-                      O'chirish
+                  <div className="flex gap-2">
+                    <Button
+                      type="primary"
+                      onClick={() => setReceiptDataBool(true)}
+                    >
+                      Print
                     </Button>
-                  </Popconfirm>
+                    <Popconfirm
+                      title="Bemor tashrifini o'chirish"
+                      description={`Haqiqatdan ham o'chirmoqchimisiz,\n eslataman bu amalni bekor qila olmaysiz!`}
+                      onConfirm={confirmVisit}
+                      onCancel={cancel}
+                      open={openPopap}
+                      className="mr-[30px]"
+                      okText="Ha"
+                      onOpenChange={(visible) => setOpenPopap(visible)}
+                      cancelText="Yo'q"
+                      okButtonProps={{ loading: deleteVisitLoading }}
+                    >
+                      <Button danger onClick={() => setOpenPopap(true)}>
+                        O'chirish
+                      </Button>
+                    </Popconfirm>
+                  </div>
                 </div>
                 {visitResipesLoading || diagnosLoading ? (
                   <div className="flex justify-center items-center py-10">
